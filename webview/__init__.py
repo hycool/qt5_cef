@@ -53,3 +53,7 @@ def create_window(title=default_window_title, url=None, uid='master', width=defa
 
 def evaluate_js(script, uid='master'):
     gui.execute_javascript(script, uid)
+
+
+def set_cookies(cookies):
+    gui.set_cookies(cookies)

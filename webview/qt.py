@@ -293,5 +293,6 @@ def execute_javascript(script, uid):
     BrowserView.instances[uid].view.ExecuteJavascript(script)
 
 
-def set_cookies(cookie):
-    cookie_manager = cef.CookieManager()
+def set_cookies(cookies):
+    cookie_manager = cef.CookieManager().CreateManager()
+    cookie_manager.setCookie(cookies)
