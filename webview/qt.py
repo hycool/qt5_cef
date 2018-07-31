@@ -1,6 +1,6 @@
 import sys
 import os
-import platform
+# import platform
 import base64
 from PyQt5 import QtCore
 from threading import Event
@@ -191,6 +191,7 @@ class BrowserView(QMainWindow):
     def minimize_window(self, uid):
         BrowserView.instances[uid].showMinimized()
 
+
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
     b64 = base64.b64encode(html).decode("utf-8", "replace")
@@ -226,11 +227,13 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
 
 
 def launch_main_window(uid, title, url, width, height, resizable, full_screen, min_size,
-                       background_color, web_view_ready, context_menu=False, maximized=True, minimized=False):
+                       background_color, web_view_ready, context_menu=False, maximized=True, minimized=False,
+                       user_agent='ffpos/1.0.01'):
     app = CefApplication(sys.argv)
     settings = {
         'context_menu': {'enabled': context_menu},
         'auto_zooming': 0.0,
+        'user_agent': user_agent
     }
     switches = {
         'disable-gpu': ''
@@ -288,3 +291,7 @@ def append_payload(uid, payload):
 
 def execute_javascript(script, uid):
     BrowserView.instances[uid].view.ExecuteJavascript(script)
+
+
+def set_cookies(cookie):
+    cookie_manager = cef.CookieManager()
