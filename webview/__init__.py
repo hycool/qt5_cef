@@ -40,7 +40,7 @@ def create_window(title=default_window_title, url=None, uid='master', width=defa
                   height=default_window_height, resizable=True,
                   full_screen=False,
                   min_size=(min_window_width, min_window_height), background_color='#FFFFFF', context_menu=False,
-                  url_type='document', maximized=True, minimized=False):
+                  url_type='document', maximized=True, minimized=False, icon_path=''):
     web_view_ready.clear()
     format_url = url
     if url_type == 'string':
@@ -48,7 +48,7 @@ def create_window(title=default_window_title, url=None, uid='master', width=defa
     gui.launch_main_window(uid, title, url=format_url, width=width, height=height, resizable=resizable,
                            full_screen=full_screen, min_size=min_size,
                            background_color=background_color, web_view_ready=web_view_ready, context_menu=context_menu,
-                           maximized=maximized, minimized=minimized)
+                           maximized=maximized, minimized=minimized, icon_path=icon_path)
 
 
 def evaluate_js(script, uid='master'):

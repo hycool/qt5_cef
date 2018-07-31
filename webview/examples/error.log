@@ -1,7 +1,0 @@
-
-[2018-07-31 15:18:11] Traceback (most recent call last):
-  File "v8function_handler.pyx", line 42, in cefpython_py36.V8FunctionHandler_Execute (cefpython_py36.cpp:98999)
-  File "E:\SymanWorkplace\qt5_cef\webview\qt.py", line 183, in maximize_current_window
-    self.view.showMaximized()
-AttributeError: 'cefpython_py36.PyBrowser' object has no attribute 'showMaximized'
-

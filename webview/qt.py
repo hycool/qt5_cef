@@ -39,19 +39,20 @@ class CefApplication(QApplication):
 
 
 class LoadHandler(object):
-    def __init__(self, uid, payload):
+    def __init__(self, uid, payload, cid):
         self.payload = payload
         self.uid = uid
+        self.cid = cid
 
     def OnLoadStart(self, browser, frame):
         with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
             browser.ExecuteJavascript(js.read())
-        append_payload(self.uid, self.payload)
+        append_payload(self.uid, self.payload, self.cid)
 
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
         with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
             browser.ExecuteJavascript(js.read())
-        append_payload(self.uid, self.payload)
+        append_payload(self.uid, self.payload, self.cid)
 
 
 class BrowserView(QMainWindow):
@@ -61,7 +62,7 @@ class BrowserView(QMainWindow):
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
     def __init__(self, uid, title, url, width, height, resizable, full_scrren,
-                 min_size, background_color, webview_ready):
+                 min_size, background_color, webview_ready, icon_path):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         self.uid = uid
@@ -71,6 +72,7 @@ class BrowserView(QMainWindow):
         self.resize(width, height)  # QWidget.resize 重新调整qt 窗口大小
         self.title = title
         self.setWindowTitle(title)  # QWidget.setWindowTitle 窗口标题重命名
+        self.setWindowIcon(QIcon(icon_path))
 
         # Set window background color
         self.background_color = QColor()
@@ -153,10 +155,11 @@ class BrowserView(QMainWindow):
             param.setdefault('url', 'about:blank')
             param.setdefault('title', default_window_title)
             param.setdefault('payload', {})
+            param.setdefault('cid', '')
             param.setdefault('maximized', False)
             param.setdefault('minimized', False)
             open_new_window(url=param["url"], title=param["title"], payload=param["payload"],
-                            maximized=param["maximized"], minimized=param["minimized"])
+                            maximized=param["maximized"], minimized=param["minimized"], cid=param["cid"])
         elif isinstance(param, str):
             open_new_window(url=param)
 
@@ -203,18 +206,18 @@ def generate_guid():
     return 'child_' + uuid4().hex[:8]
 
 
-def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False):
+def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False, cid=''):
     create_browser_view(uid=generate_guid(), url=url, title=title, payload=payload, maximized=maximized,
-                        minimized=minimized)
+                        minimized=minimized, cid=cid)
 
 
 def create_browser_view(uid, title="", url=None, width=default_window_width, height=default_window_height,
                         resizable=True, full_screen=False,
                         min_size=(min_window_width, min_window_height),
                         background_color="#ffffff", web_view_ready=None, payload=None, maximized=False,
-                        minimized=False):
+                        minimized=False, icon_path='', cid=''):
     browser = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
-                          background_color, web_view_ready)
+                          background_color, web_view_ready, icon_path=icon_path)
     if maximized:
         browser.showMaximized()
 
@@ -222,13 +225,13 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
         browser.showMinimized()
 
     browser.show()
-    set_client_handler(uid, payload)
+    set_client_handler(uid, payload, cid)
     set_javascript_bindings(uid)
 
 
 def launch_main_window(uid, title, url, width, height, resizable, full_screen, min_size,
                        background_color, web_view_ready, context_menu=False, maximized=True, minimized=False,
-                       user_agent='ffpos/1.0.01'):
+                       user_agent='ffpos/1.0.01', icon_path=''):
     app = CefApplication(sys.argv)
     settings = {
         'context_menu': {'enabled': context_menu},
@@ -248,15 +251,15 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     create_browser_view(uid=uid, title=title, url=url, width=width, height=height, resizable=resizable,
                         full_screen=full_screen, min_size=min_size,
                         background_color=background_color, web_view_ready=web_view_ready, maximized=maximized,
-                        minimized=minimized)
+                        minimized=minimized, icon_path=icon_path)
     app.exec_()
     app.stop_timer()
     del app
     cef.Shutdown()
 
 
-def set_client_handler(uid, payload):
-    BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload))
+def set_client_handler(uid, payload, cid):
+    BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid))
 
 
 def set_javascript_bindings(uid):
@@ -267,8 +270,12 @@ def set_javascript_bindings(uid):
     BrowserView.instances[uid].view.SetJavascriptBindings(bindings)
 
 
-def append_payload(uid, payload):
+def append_payload(uid, payload, cid=''):
     BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'wid', uid)
+    if cid != '':
+        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'cid', cid)
+    else:
+        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'cid', uid)
     if payload is None:
         return
     if isinstance(payload, dict):
