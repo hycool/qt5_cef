@@ -1,3 +1,4 @@
 .idea/
 venv/
 webview/__pycache__/
+error.log

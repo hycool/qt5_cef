@@ -151,8 +151,9 @@ class BrowserView(QMainWindow):
         This method can be invoked by Javascript.
         :return:
         """
-        for qt_main_window in BrowserView.instances.values():
-            qt_main_window.close()
+        # for qt_main_window in BrowserView.instances.values():
+        #     qt_main_window.close()
+        quit_application()
 
     def open(self, param=None):
         """
@@ -216,6 +217,7 @@ class BrowserView(QMainWindow):
             browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'widLists',
                                          list(BrowserView.cid_map.keys()))
 
+
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
     b64 = base64.b64encode(html).decode("utf-8", "replace")
@@ -253,6 +255,7 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
 def launch_main_window(uid, title, url, width, height, resizable, full_screen, min_size,
                        background_color, web_view_ready, context_menu=False, maximized=True, minimized=False,
                        user_agent='ffpos/1.0.01', icon_path=''):
+    global app
     app = CefApplication(sys.argv)
     settings = {
         'context_menu': {'enabled': context_menu},
@@ -324,3 +327,7 @@ def execute_javascript(script, uid):
 def set_cookies(cookies):
     cookie_manager = cef.CookieManager().CreateManager()
     cookie_manager.setCookie(cookies)
+
+
+def quit_application():
+    app.quit()
