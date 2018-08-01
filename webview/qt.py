@@ -217,6 +217,20 @@ class BrowserView(QMainWindow):
             browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'widLists',
                                          list(BrowserView.cid_map.keys()))
 
+    def focus_browser(self, cid=None):
+        if cid is not None and isinstance(cid, str):
+            for (uid, _cid_) in BrowserView.cid_map.items():
+                if _cid_ == cid:
+                    BrowserView.instances[uid].view.SetFocus(True)
+                    BrowserView.instances[uid].activateWindow()
+                    BrowserView.instances[uid].view.SetFocus(True)
+                    break
+        else:
+            self.setFocus(True)
+            self.activateWindow()
+            self.view.SetFocus(True)
+
+
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")

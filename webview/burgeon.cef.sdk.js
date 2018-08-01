@@ -119,5 +119,16 @@
             }
         }
     };
+    cef.focus = (uid) => {
+        if (typeof uid === 'string') {
+            if (window[moduleName] && typeof window[moduleName]['focus_browser'] === 'function') {
+                window[moduleName]['focus_browser'](uid);
+            }
+        } else {
+            if (window[moduleName] && typeof window[moduleName]['focus_current_browser'] === 'function') {
+                window[moduleName]['focus_current_browser']();
+            }
+        }
+    };
     window[sdkModuleName] = cef;
 }());
