@@ -39,33 +39,42 @@ class CefApplication(QApplication):
 
 
 class LoadHandler(object):
-    def __init__(self, uid, payload, cid):
+    def __init__(self, uid, payload, cid, browser):
         self.payload = payload
         self.uid = uid
         self.cid = cid
+        self.browser = browser
 
     def OnLoadStart(self, browser, frame):
         with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
             browser.ExecuteJavascript(js.read())
         append_payload(self.uid, self.payload, self.cid)
+        self.browser.update_browser_info_one_by_one()
 
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
         with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
             browser.ExecuteJavascript(js.read())
         append_payload(self.uid, self.payload, self.cid)
+        self.browser.update_browser_info_one_by_one()
 
 
 class BrowserView(QMainWindow):
     instances = {}
+    cid_map = {}
 
     full_screen_trigger = QtCore.pyqtSignal()
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
     def __init__(self, uid, title, url, width, height, resizable, full_scrren,
-                 min_size, background_color, webview_ready, icon_path):
+                 min_size, background_color, webview_ready, icon_path, cid):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         self.uid = uid
+        if cid == '':
+            self.cid = uid
+        else:
+            self.cid = cid
+        BrowserView.cid_map[uid] = self.cid
         self.is_full_screen = False
         self.load_event = Event()
 
@@ -124,6 +133,7 @@ class BrowserView(QMainWindow):
             self.view.ExecuteFunction('window.__cef__.dispatchCustomEvent', 'windowCloseEvent')
         else:
             event.accept()
+            self.update_browser_info_one_by_one(increase=False)
 
     def resizeEvent(self, event):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
@@ -194,6 +204,17 @@ class BrowserView(QMainWindow):
     def minimize_window(self, uid):
         BrowserView.instances[uid].showMinimized()
 
+    def update_browser_info_one_by_one(self, increase=True):
+        # 移除窗口实例
+        if not increase:
+            del BrowserView.instances[self.uid]
+            del BrowserView.cid_map[self.uid]
+
+        for browser in BrowserView.instances.values():
+            browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'cidLists',
+                                         list(BrowserView.cid_map.values()))
+            browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'widLists',
+                                         list(BrowserView.cid_map.keys()))
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
@@ -217,7 +238,7 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
                         background_color="#ffffff", web_view_ready=None, payload=None, maximized=False,
                         minimized=False, icon_path='', cid=''):
     browser = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
-                          background_color, web_view_ready, icon_path=icon_path)
+                          background_color, web_view_ready, icon_path=icon_path, cid=cid)
     if maximized:
         browser.showMaximized()
 
@@ -225,7 +246,7 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
         browser.showMinimized()
 
     browser.show()
-    set_client_handler(uid, payload, cid)
+    set_client_handler(uid, payload, cid, browser)
     set_javascript_bindings(uid)
 
 
@@ -258,8 +279,8 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     cef.Shutdown()
 
 
-def set_client_handler(uid, payload, cid):
-    BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid))
+def set_client_handler(uid, payload, cid, browser):
+    BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid, browser))
 
 
 def set_javascript_bindings(uid):

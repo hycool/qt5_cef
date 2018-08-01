@@ -2,7 +2,8 @@
     const moduleName = 'windowInstance';
     const sdkModuleName = '__cef__';
     const cef = {
-        payload: {}
+        payload: {},
+        hooks: {}
     };
     const customEventMap = {
         windowCloseEvent: {
@@ -30,6 +31,7 @@
             return;
         }
         customEventMap[eventName].hooks += 1;
+        cef.hooks[eventName] = customEventMap[eventName].hooks;
         window.addEventListener(eventName, eventHook);
     };
     cef.removeEventListener = (eventName, eventHook) => {
@@ -42,6 +44,7 @@
             return;
         }
         customEventMap[eventName].hooks -= 1;
+        cef.hooks[eventName] = customEventMap[eventName].hooks;
         window.removeEventListener(eventName, eventHook);
     };
     cef.console = (msg, type) => {
