@@ -16,6 +16,11 @@ default_window_height = constant.default_window_height
 default_window_title = constant.default_window_title
 min_window_width = constant.min_window_width
 min_window_height = constant.min_window_height
+cef_sdk = constant.burgeon_cef_sdk_js
+
+global_icon_path = ''
+
+debug_mode = False
 
 
 class CefApplication(QApplication):
@@ -46,14 +51,20 @@ class LoadHandler(object):
         self.browser = browser
 
     def OnLoadStart(self, browser, frame):
-        with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
-            browser.ExecuteJavascript(js.read())
+        if debug_mode:
+            with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
+                browser.ExecuteJavascript(js.read())
+        else:
+            browser.ExecuteJavascript(cef_sdk)
         append_payload(self.uid, self.payload, self.cid)
         self.browser.update_browser_info_one_by_one()
 
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
-        with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
-            browser.ExecuteJavascript(js.read())
+        if debug_mode:
+            with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
+                browser.ExecuteJavascript(js.read())
+        else:
+            browser.ExecuteJavascript(cef_sdk)
         append_payload(self.uid, self.payload, self.cid)
         self.browser.update_browser_info_one_by_one()
 
@@ -81,7 +92,7 @@ class BrowserView(QMainWindow):
         self.resize(width, height)  # QWidget.resize 重新调整qt 窗口大小
         self.title = title
         self.setWindowTitle(title)  # QWidget.setWindowTitle 窗口标题重命名
-        self.setWindowIcon(QIcon(icon_path))
+        self.setWindowIcon(QIcon(global_icon_path))
 
         # Set window background color
         self.background_color = QColor()
@@ -230,6 +241,11 @@ class BrowserView(QMainWindow):
             self.activateWindow()
             self.view.SetFocus(True)
 
+    def set_browser_payload(self, cid, payload):
+        print(cid, payload)
+        for (uid, value) in BrowserView.cid_map.items():
+            if value == cid:
+                BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCustomizePayload', payload)
 
 
 def html_to_data_uri(html):
@@ -269,6 +285,8 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
 def launch_main_window(uid, title, url, width, height, resizable, full_screen, min_size,
                        background_color, web_view_ready, context_menu=False, maximized=True, minimized=False,
                        user_agent='ffpos/1.0.01', icon_path=''):
+    global global_icon_path
+    global_icon_path = icon_path
     global app
     app = CefApplication(sys.argv)
     settings = {
@@ -327,7 +345,7 @@ def append_payload(uid, payload, cid=''):
                                                                 'warn')
         for key in fun_list:
             del payload[key]
-        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.initializeCustomizePayload', payload)
+        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCustomizePayload', payload)
     else:
         BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.console',
                                                         '启动新窗口时挂载的payload必须为JsonObject，且对象属性不能为函数: payload = {payload}'
