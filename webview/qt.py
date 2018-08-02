@@ -1,6 +1,5 @@
 import sys
 import os
-# import platform
 import base64
 from PyQt5 import QtCore
 from threading import Event
@@ -20,7 +19,7 @@ cef_sdk = constant.burgeon_cef_sdk_js
 
 global_icon_path = ''
 
-debug_mode = False
+debug_mode = True
 
 
 class CefApplication(QApplication):
@@ -69,6 +68,11 @@ class LoadHandler(object):
         self.browser.update_browser_info_one_by_one()
 
 
+class KeyboardHandler(object):
+    def OnPreKeyEvent(self, browser, event, event_handle, is_keyboard_shortcut_out):
+        print(event)
+
+
 class BrowserView(QMainWindow):
     instances = {}
     cid_map = {}
@@ -77,7 +81,7 @@ class BrowserView(QMainWindow):
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
     def __init__(self, uid, title, url, width, height, resizable, full_scrren,
-                 min_size, background_color, webview_ready, icon_path, cid):
+                 min_size, background_color, webview_ready, cid, enable_max):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         self.uid = uid
@@ -105,11 +109,13 @@ class BrowserView(QMainWindow):
             self.setFixedSize(width, height)
 
         self.setMinimumSize(min_size[0], min_size[1])
+        # 禁用窗口最大化
+        if not enable_max:
+            self.setFixedSize(self.width(), self.height())
 
         window_info = cef.WindowInfo()
         rect = [0, 0, self.width(), self.height()]
         window_info.SetAsChild(int(self.winId()), rect)
-        # window_info.SetAsChild(int(self.winId()))
 
         setting = {
             "standard_font_family": "Microsoft YaHei",
@@ -141,10 +147,13 @@ class BrowserView(QMainWindow):
     def closeEvent(self, event):
         if event.spontaneous():
             event.ignore()
-            self.view.ExecuteFunction('window.__cef__.dispatchCustomEvent', 'windowCloseEvent')
+            self.view.ExecuteFunction('window.python_cef.dispatchCustomEvent', 'windowCloseEvent')
         else:
-            event.accept()
-            self.update_browser_info_one_by_one(increase=False)
+            if self.uid == 'master':
+                quit_application()
+            else:
+                event.accept()
+                self.update_browser_info_one_by_one(increase=False)
 
     def resizeEvent(self, event):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
@@ -174,6 +183,7 @@ class BrowserView(QMainWindow):
         if param is None:
             param = {}
         if isinstance(param, dict):
+            print('param = ', param)
             param.setdefault('url', 'about:blank')
             param.setdefault('title', default_window_title)
             param.setdefault('payload', {})
@@ -182,9 +192,10 @@ class BrowserView(QMainWindow):
             param.setdefault('minimized', False)
             param.setdefault('width', default_window_width)
             param.setdefault('height', default_window_height)
+            param.setdefault('enableMax', True)
             open_new_window(url=param["url"], title=param["title"], payload=param["payload"],
                             maximized=param["maximized"], minimized=param["minimized"], cid=param["cid"],
-                            width=param["width"], height=param["height"])
+                            width=param["width"], height=param["height"], enable_max=param["enableMax"])
         elif isinstance(param, str):
             open_new_window(url=param)
 
@@ -226,29 +237,40 @@ class BrowserView(QMainWindow):
             del BrowserView.cid_map[self.uid]
 
         for browser in BrowserView.instances.values():
-            browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'cidLists',
+            browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'cidLists',
                                          list(BrowserView.cid_map.values()))
-            browser.view.ExecuteFunction('window.__cef__.updateCefConfig', 'widLists',
+            browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'widLists',
                                          list(BrowserView.cid_map.keys()))
 
     def focus_browser(self, cid=None):
         if cid is not None and isinstance(cid, str):
             for (uid, _cid_) in BrowserView.cid_map.items():
                 if _cid_ == cid:
-                    BrowserView.instances[uid].view.SetFocus(True)
                     BrowserView.instances[uid].activateWindow()
+                    BrowserView.instances[uid].view.SetFocus(True)
                     BrowserView.instances[uid].view.SetFocus(True)
                     break
         else:
-            self.setFocus(True)
             self.activateWindow()
+            self.setFocus(True)
             self.view.SetFocus(True)
+
+    def arouse_window(self, cid=None):
+        if cid is not None and isinstance(cid, str):
+            for (uid, _cid_) in BrowserView.cid_map.items():
+                if _cid_ == cid:
+                    BrowserView.instances[uid].activateWindow()
+                    BrowserView.instances[uid].showNormal()
+                    break
+        else:
+            self.showNormal()
+            self.activateWindow()
 
     def set_browser_payload(self, cid, payload):
         print(cid, payload)
         for (uid, value) in BrowserView.cid_map.items():
             if value == cid:
-                BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCustomizePayload', payload)
+                BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCustomizePayload', payload)
                 break
 
 
@@ -264,18 +286,18 @@ def generate_guid():
 
 
 def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False, cid='',
-                    width=default_window_width, height=default_window_height):
+                    width=default_window_width, height=default_window_height, enable_max=True):
     create_browser_view(uid=generate_guid(), url=url, title=title, payload=payload, maximized=maximized,
-                        minimized=minimized, cid=cid, width=width, height=height)
+                        minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
 
 
 def create_browser_view(uid, title="", url=None, width=default_window_width, height=default_window_height,
                         resizable=True, full_screen=False,
                         min_size=(min_window_width, min_window_height),
                         background_color="#ffffff", web_view_ready=None, payload=None, maximized=False,
-                        minimized=False, icon_path='', cid='', call_back=None):
+                        minimized=False, icon_path='', cid='', call_back=None, enable_max=True):
     browser = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
-                          background_color, web_view_ready, icon_path=icon_path, cid=cid)
+                          background_color, web_view_ready, cid=cid, enable_max=enable_max)
     if maximized:
         browser.showMaximized()
 
@@ -324,6 +346,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
 
 def set_client_handler(uid, payload, cid, browser):
     BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid, browser))
+    BrowserView.instances[uid].view.SetClientHandler(KeyboardHandler())
 
 
 def set_javascript_bindings(uid):
@@ -335,11 +358,11 @@ def set_javascript_bindings(uid):
 
 
 def append_payload(uid, payload, cid=''):
-    BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'wid', uid)
+    BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCefConfig', 'wid', uid)
     if cid != '':
-        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'cid', cid)
+        BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCefConfig', 'cid', cid)
     else:
-        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCefConfig', 'cid', uid)
+        BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCefConfig', 'cid', uid)
     if payload is None:
         return
     if isinstance(payload, dict):
@@ -347,15 +370,16 @@ def append_payload(uid, payload, cid=''):
         for (k, v) in payload.items():
             if isinstance(v, cef.JavascriptCallback):
                 fun_list.append(k)
-                BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.console',
+                BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.console',
                                                                 '检测到 payload.{key} 是函数类型，启动新窗口时挂载的payload中不允许包含函数'
                                                                 .format(key=k),
                                                                 'warn')
         for key in fun_list:
             del payload[key]
-        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCustomizePayload', payload)
+        print('payload = ', payload)
+        BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCustomizePayload', payload)
     else:
-        BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.console',
+        BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.console',
                                                         '启动新窗口时挂载的payload必须为JsonObject，且对象属性不能为函数: payload = {payload}'
                                                         .format(payload=payload))
 

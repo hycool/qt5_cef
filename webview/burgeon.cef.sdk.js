@@ -1,10 +1,12 @@
 (function () {
     const moduleName = 'windowInstance';
     const sdkModuleName = '__cef__';
+    const pythonCallBack = 'python_cef';
     const cef = {
         payload: {},
         hooks: {}
     };
+    const python_cef = {};
     const customEventMap = {
         windowCloseEvent: {
             name: 'windowCloseEvent',
@@ -12,7 +14,31 @@
             hooks: 0
         }
     };
-    cef.dispatchCustomEvent = (eventName) => {
+    python_cef.console = (msg, type) => {
+        switch (type) {
+            case 'error':
+                console.error(msg);
+                break;
+            case 'warn':
+                console.warn(msg);
+                break;
+            default:
+                console.log(msg);
+                break;
+        }
+    };
+    python_cef.updateCustomizePayload = (params) => {
+        Object.keys(params).forEach(key => {
+            cef.payload[key] = params[key]
+        })
+    };
+    python_cef.updateCefConfig = (key, value) => {
+        if (window[sdkModuleName] === undefined) {
+            window[sdkModuleName] = {}
+        }
+        window[sdkModuleName][key] = value;
+    };
+    python_cef.dispatchCustomEvent = (eventName) => {
         if (customEventMap[eventName].hooks === 0 &&
             window[moduleName] &&
             typeof window[sdkModuleName].close === 'function') {
@@ -46,36 +72,6 @@
         customEventMap[eventName].hooks -= 1;
         cef.hooks[eventName] = customEventMap[eventName].hooks;
         window.removeEventListener(eventName, eventHook);
-    };
-    cef.console = (msg, type) => {
-        switch (type) {
-            case 'error':
-                console.error(msg);
-                break;
-            case 'warn':
-                console.warn(msg);
-                break;
-            default:
-                console.log(msg);
-                break;
-        }
-    };
-    cef.updateCustomizePayload = (params) => {
-        Object.keys(params).forEach(key => {
-            cef.payload[key] = params[key]
-        })
-    };
-    cef.updateWindowInstance = (key, value) => {
-        if (window[moduleName] === undefined) {
-            window[moduleName] = {}
-        }
-        window[moduleName][key] = value;
-    };
-    cef.updateCefConfig = (key, value) => {
-        if (window[sdkModuleName] === undefined) {
-            window[sdkModuleName] = {}
-        }
-        window[sdkModuleName][key] = value;
     };
     cef.open = (params) => {
         if (window[moduleName] && typeof window[moduleName].open === 'function') {
@@ -119,15 +115,14 @@
             }
         }
     };
-    cef.focus = (uid) => {
-        if (typeof uid === 'string') {
-            if (window[moduleName] && typeof window[moduleName]['focus_browser'] === 'function') {
-                window[moduleName]['focus_browser'](uid);
-            }
-        } else {
-            if (window[moduleName] && typeof window[moduleName]['focus_current_browser'] === 'function') {
-                window[moduleName]['focus_current_browser']();
-            }
+    cef.focus = (cid) => {
+        if (window[moduleName] && typeof window[moduleName]['focus_browser'] === 'function') {
+            window[moduleName]['focus_browser'](cid);
+        }
+    };
+    cef.arouse = (cid) => {
+        if (window[moduleName] && typeof window[moduleName]['arouse_window'] === 'function') {
+            window[moduleName]['arouse_window'](cid);
         }
     };
     cef.setBrowserPayload = (cid, payload) => {
@@ -140,11 +135,12 @@
             return;
         }
         if (window[moduleName] && typeof window[moduleName]['set_browser_payload'] === 'function') {
-            window[moduleName]['set_browser_payload'](cid ,payload);
+            window[moduleName]['set_browser_payload'](cid, payload);
         }
 
     };
     window[sdkModuleName] = cef;
+    window[pythonCallBack] = python_cef;
 }());
 
 // 测试阶段的代码
