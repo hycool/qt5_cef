@@ -246,6 +246,7 @@ class BrowserView(QMainWindow):
         for (uid, value) in BrowserView.cid_map.items():
             if value == cid:
                 BrowserView.instances[uid].view.ExecuteFunction('window.__cef__.updateCustomizePayload', payload)
+                break
 
 
 def html_to_data_uri(html):
