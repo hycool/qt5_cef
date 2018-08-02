@@ -269,7 +269,7 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
                         resizable=True, full_screen=False,
                         min_size=(min_window_width, min_window_height),
                         background_color="#ffffff", web_view_ready=None, payload=None, maximized=False,
-                        minimized=False, icon_path='', cid=''):
+                        minimized=False, icon_path='', cid='', call_back=None):
     browser = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
                           background_color, web_view_ready, icon_path=icon_path, cid=cid)
     if maximized:
@@ -279,13 +279,16 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
         browser.showMinimized()
 
     browser.show()
+    if hasattr(call_back, '__call__'):
+        call_back(browser)
+
     set_client_handler(uid, payload, cid, browser)
     set_javascript_bindings(uid)
 
 
 def launch_main_window(uid, title, url, width, height, resizable, full_screen, min_size,
                        background_color, web_view_ready, context_menu=False, maximized=True, minimized=False,
-                       user_agent='ffpos/1.0.01', icon_path=''):
+                       user_agent='ffpos/1.0.01', icon_path='', call_back=None):
     global global_icon_path
     global_icon_path = icon_path
     global app
@@ -308,7 +311,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     create_browser_view(uid=uid, title=title, url=url, width=width, height=height, resizable=resizable,
                         full_screen=full_screen, min_size=min_size,
                         background_color=background_color, web_view_ready=web_view_ready, maximized=maximized,
-                        minimized=minimized, icon_path=icon_path)
+                        minimized=minimized, icon_path=icon_path, call_back=call_back)
     app.exec_()
     app.stop_timer()
     del app
