@@ -2,7 +2,7 @@ import sys
 import os
 import base64
 from PyQt5 import QtCore
-from threading import Event
+from threading import Event, Thread
 import webview.constant as constant
 from cefpython3 import cefpython as cef
 from uuid import uuid4
@@ -395,3 +395,12 @@ def set_cookies(cookies):
 
 def quit_application():
     app.quit()
+    t = Thread(target=exit_python)
+    t.start()
+
+
+def exit_python():
+    try:
+        sys.exit(0)
+    except SystemExit:
+        os._exit(0)
