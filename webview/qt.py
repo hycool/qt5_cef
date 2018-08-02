@@ -180,8 +180,11 @@ class BrowserView(QMainWindow):
             param.setdefault('cid', '')
             param.setdefault('maximized', False)
             param.setdefault('minimized', False)
+            param.setdefault('width', default_window_width)
+            param.setdefault('height', default_window_height)
             open_new_window(url=param["url"], title=param["title"], payload=param["payload"],
-                            maximized=param["maximized"], minimized=param["minimized"], cid=param["cid"])
+                            maximized=param["maximized"], minimized=param["minimized"], cid=param["cid"],
+                            width=param["width"], height=param["height"])
         elif isinstance(param, str):
             open_new_window(url=param)
 
@@ -260,9 +263,10 @@ def generate_guid():
     return 'child_' + uuid4().hex[:8]
 
 
-def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False, cid=''):
+def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False, cid='',
+                    width=default_window_width, height=default_window_height):
     create_browser_view(uid=generate_guid(), url=url, title=title, payload=payload, maximized=maximized,
-                        minimized=minimized, cid=cid)
+                        minimized=minimized, cid=cid, width=width, height=height)
 
 
 def create_browser_view(uid, title="", url=None, width=default_window_width, height=default_window_height,
