@@ -1,10 +1,3 @@
-default_window_width = 1200
-default_window_height = 800
-default_window_title = 'FC-POS'
-min_window_width = 800
-min_window_height = 600
-
-burgeon_cef_sdk_js = """
 (function () {
     const moduleName = 'windowInstance';
     const sdkModuleName = '__cef__';
@@ -149,4 +142,25 @@ burgeon_cef_sdk_js = """
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;
 }());
-"""
+
+// 测试阶段的代码
+/*
+
+    cef.getBrowserInfo = (cid, callBackFunction) => {
+        if (typeof cid !== 'string' || cid === '') {
+            console.error('getBrowserInfo(cid, callBackFunction): cid 必须为字符串且不为空字符串');
+            return;
+        }
+        if (typeof callBackFunction !== 'function') {
+            console.error('getBrowserInfo(cid, callBackFunction): callBackFunction 必须为函数');
+            return;
+        }
+        const pythonCallBackName = `cefBrowserCallBackFunction_${Date.now()}`;
+        window[pythonCallBackName] = callBackFunction;
+        if (window[moduleName] && typeof window[moduleName]['get_browser_info'] === 'function') {
+            window[moduleName]['get_browser_info'](cid, pythonCallBackName);
+        }
+    };
+
+
+ */

@@ -276,22 +276,6 @@ class BrowserView(QMainWindow):
                 BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCustomizePayload', payload)
                 break
 
-    def set_cookie(self, cookieObj={}):
-        if not isinstance(cookieObj, dict):
-            return
-        else:
-            cookieObj.setdefault('name', 'default_cookie_name')
-            cookieObj.setdefault('value', 'default_cookie_value')
-            cookieObj.setdefault('domain', '127.0.0.1')
-            cookieObj.setdefault('path', '/')
-            cookie_manager = cef.CookieManager().GetGlobalManager()
-            cookie = cef.Cookie()
-            cookie.SetName(cookieObj['name'])
-            cookie.SetValue(cookieObj['value'])
-            cookie.SetDomain(cookieObj['domain'])
-            cookie.SetPath(cookieObj['path'])
-            cookie_manager.SetCookie(self.view.GetUrl(), cookie)
-
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
