@@ -68,9 +68,9 @@ class LoadHandler(object):
         self.browser.update_browser_info_one_by_one()
 
 
-class KeyboardHandler(object):
-    def OnPreKeyEvent(self, browser, event, event_handle, is_keyboard_shortcut_out):
-        print(event)
+# class KeyboardHandler(object):
+#     def OnPreKeyEvent(self, browser, event, event_handle, is_keyboard_shortcut_out):
+#         print(event)
 
 
 class BrowserView(QMainWindow):
@@ -186,7 +186,6 @@ class BrowserView(QMainWindow):
         if param is None:
             param = {}
         if isinstance(param, dict):
-            print('param = ', param)
             param.setdefault('url', 'about:blank')
             param.setdefault('title', default_window_title)
             param.setdefault('payload', {})
@@ -270,7 +269,6 @@ class BrowserView(QMainWindow):
             self.activateWindow()
 
     def set_browser_payload(self, cid, payload):
-        print(cid, payload)
         for (uid, value) in BrowserView.cid_map.items():
             if value == cid:
                 BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCustomizePayload', payload)
@@ -365,7 +363,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
 
 def set_client_handler(uid, payload, cid, browser):
     BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid, browser))
-    BrowserView.instances[uid].view.SetClientHandler(KeyboardHandler())
+    # BrowserView.instances[uid].view.SetClientHandler(KeyboardHandler())
 
 
 def set_javascript_bindings(uid):
@@ -395,7 +393,6 @@ def append_payload(uid, payload, cid=''):
                                                                 'warn')
         for key in fun_list:
             del payload[key]
-        print('payload = ', payload)
         BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.updateCustomizePayload', payload)
     else:
         BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.console',
@@ -404,7 +401,10 @@ def append_payload(uid, payload, cid=''):
 
 
 def execute_javascript(script, uid):
-    BrowserView.instances[uid].view.ExecuteJavascript(script)
+    if uid in BrowserView.instances:
+        BrowserView.instances[uid].view.ExecuteJavascript(script)
+    else:
+        return
 
 
 def set_cookies(url, cookies):
