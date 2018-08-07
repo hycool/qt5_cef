@@ -73,11 +73,18 @@
         </button>
         <button onclick="batchClose('master')">
             <span>批量关闭窗口：</span>
-            window.__cef__.arouse('master')
+            window.__cef__.close(['cid-1', 'cid-2'])
+        </button>
+        <button onclick="broadCast()">
+            <span>窗口广播：</span>
+            window.__cef__.broadCast(eventData)
         </button>
         <br/>
     </div>
     <script>
+        function broadCast() {
+            __cef__.broadCast({ a: 'a', b: 1, c: [], d: { d1: 'd1' } })
+        }
         function batchClose() {
             const cidLists = ([].concat(__cef__.cidLists)).slice(1);
             __cef__.close(cidLists)
@@ -111,10 +118,12 @@
                 window.__cef__.close();
             }
         };
-
+        const f2 = (e) => {
+            console.log('broad cast e = ', e);
+        };
         setTimeout(() => {
-            console.log('bind close event');
             __cef__.addEventListener('windowCloseEvent', f1);
+            __cef__.addEventListener('windowBroadcastEvent', f2);
         }, 10);
     </script>
 </body>

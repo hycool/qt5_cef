@@ -311,6 +311,11 @@ class BrowserView(QMainWindow):
             if value == cid:
                 return uid
 
+    def dispatch_customize_event(self, event_name='', event_data={}):
+        for uid in BrowserView.instances.keys():
+            BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
+                                                            event_data)
+
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
@@ -333,7 +338,7 @@ def create_browser_view(uid, title="", url=None, width=default_window_width, hei
                         resizable=True, full_screen=False,
                         min_size=(min_window_width, min_window_height),
                         background_color="#ffffff", web_view_ready=None, payload=None, maximized=False,
-                        minimized=False, icon_path='', cid='', call_back=None, enable_max=True):
+                        minimized=False, cid='', call_back=None, enable_max=True):
     browser = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
                           background_color, web_view_ready, cid=cid, enable_max=enable_max)
     if maximized:
@@ -375,7 +380,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     create_browser_view(uid=uid, title=title, url=url, width=width, height=height, resizable=resizable,
                         full_screen=full_screen, min_size=min_size,
                         background_color=background_color, web_view_ready=web_view_ready, maximized=maximized,
-                        minimized=minimized, icon_path=icon_path, call_back=call_back)
+                        minimized=minimized, call_back=call_back)
     app.exec_()
     app.stop_timer()
     del app

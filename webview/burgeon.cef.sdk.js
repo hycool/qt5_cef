@@ -15,6 +15,11 @@
             name: 'windowCloseEvent',
             event: new CustomEvent('windowCloseEvent', {detail: {windowId: window.windowId}}),
             hooks: 0
+        },
+        windowBroadcastEvent: {
+            name: 'windowBroadcastEvent',
+            event: null,
+            hooks: 0,
         }
     };
     python_cef.console = (msg, type) => {
@@ -41,17 +46,26 @@
         }
         window[sdkModuleName][key] = value;
     };
-    python_cef.dispatchCustomEvent = (eventName) => {
-        console.info(`dispatchCustomEvent eventName=${eventName}`);
-        console.info(customEventMap);
-        if (customEventMap[eventName].hooks === 0 &&
-            window[moduleName] &&
-            typeof window[sdkModuleName].close === 'function') {
-            console.info('u will close current window');
-            // window[sdkModuleName].close();
-        } else {
-            window.dispatchEvent(customEventMap[eventName].event)
+    python_cef.dispatchCustomEvent = (eventName, eventData) => {
+        switch (eventName) {
+            case customEventMap.windowCloseEvent.name:
+                if (!window[moduleName] || typeof window[sdkModuleName]['close'] !== 'function') {
+                    return;
+                }
+                if (customEventMap[eventName].hooks === 0) {
+                    window[sdkModuleName].close();
+                } else {
+                    window.dispatchEvent(customEventMap[eventName].event)
+                }
+                break;
+            case customEventMap.windowBroadcastEvent.name:
+                const event = new CustomEvent(eventName, {detail: {eventData}});
+                window.dispatchEvent(event);
+                break;
+            default:
+                break;
         }
+
     };
     cef.addEventListener = (eventName, eventHook) => {
         if (customEventMap[eventName] === undefined) {
@@ -139,19 +153,14 @@
             window[moduleName]['arouse_window'](cid);
         }
     };
-    cef.setBrowserPayload = (cid, payload) => {
-        if (typeof cid !== 'string' || cid === '') {
-            console.error('__cef__.setBrowserPayload(cid ,payload): cid 必须为字符类型，且不为空字符串');
+    cef.broadCast = (eventData) => {
+        if (eventData && Object.prototype.toString.call(eventData) !== '[object Object]') {
+            console.error('__cef__.broadCast(eventData): eventData 为非必填项，如果传值，必须为Json Object');
             return;
         }
-        if (Object.prototype.toString.call(payload) !== '[object Object]') {
-            console.error('__cef__.setBrowserPayload(cid ,payload): payload 必须为JsonObject');
-            return;
+        if (window[moduleName] && typeof window[moduleName]['dispatch_customize_event'] === 'function') {
+            window[moduleName]['dispatch_customize_event'](customEventMap.windowBroadcastEvent.name, eventData || {});
         }
-        if (window[moduleName] && typeof window[moduleName]['set_browser_payload'] === 'function') {
-            window[moduleName]['set_browser_payload'](cid, payload);
-        }
-
     };
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;
