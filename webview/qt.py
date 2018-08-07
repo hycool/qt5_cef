@@ -10,6 +10,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+screen_width = 0
+screen_height = 0
 default_window_width = constant.default_window_width
 default_window_height = constant.default_window_height
 default_window_title = constant.default_window_title
@@ -84,18 +86,28 @@ class BrowserView(QMainWindow):
                  min_size, background_color, webview_ready, cid, enable_max):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
+        screen = QDesktopWidget().screenGeometry()
+        global screen_width
+        screen_width = screen.width()
+
         self.uid = uid
         if cid == '':
             self.cid = uid
         else:
             self.cid = cid
+
         BrowserView.cid_map[uid] = self.cid
         self.is_full_screen = False
         self.load_event = Event()
 
-        self.resize(width, height)  # QWidget.resize 重新调整qt 窗口大小
+        # 处理默认窗口大小
+        if width != -1 and height != -1:
+            self.resize(width, height)
+        else:
+            self.resize(screen_width * 0.5, screen_width * 0.5 * 0.618)
+
         self.title = title
-        self.setWindowTitle(title)  # QWidget.setWindowTitle 窗口标题重命名
+        self.setWindowTitle(title)
         self.setWindowIcon(QIcon(global_icon_path))
 
         # Set window background color
@@ -217,8 +229,7 @@ class BrowserView(QMainWindow):
         This method can be invoked by Javascript.
         :return:
         """
-        cef_window = cef.CreateBrowserSync(url=url)
-        cef_window.SetZoomLevel(5.0)
+        cef.CreateBrowserSync(url=url)
 
     def maximize_current_window(self):
         self.showMaximized()
@@ -289,6 +300,12 @@ class BrowserView(QMainWindow):
             cookie.SetDomain(cookieObj['domain'])
             cookie.SetPath(cookieObj['path'])
             cookie_manager.SetCookie(self.view.GetUrl(), cookie)
+
+    def get_room_level(self):
+        self.view.ExecuteFunction('window.python_cef.console', self.view.GetZoomLevel())
+
+    def set_roo_level(self, level):
+        self.view.SetZoomLevel(level)
 
 
 def html_to_data_uri(html):
