@@ -6,6 +6,9 @@ min_window_height = 600
 
 burgeon_cef_sdk_js = """
 (function () {
+    if (window.CEF_HAS_INITIALIZED) {
+        return
+    }
     const moduleName = 'windowInstance';
     const sdkModuleName = '__cef__';
     const pythonCallBack = 'python_cef';
@@ -46,10 +49,13 @@ burgeon_cef_sdk_js = """
         window[sdkModuleName][key] = value;
     };
     python_cef.dispatchCustomEvent = (eventName) => {
+        console.info(`dispatchCustomEvent eventName=${eventName}`);
+        console.info(customEventMap);
         if (customEventMap[eventName].hooks === 0 &&
             window[moduleName] &&
             typeof window[sdkModuleName].close === 'function') {
-            window[sdkModuleName].close();
+            console.info('u will close current window');
+            // window[sdkModuleName].close();
         } else {
             window.dispatchEvent(customEventMap[eventName].event)
         }
@@ -148,5 +154,6 @@ burgeon_cef_sdk_js = """
     };
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;
+    window.CEF_HAS_INITIALIZED = true;
 }());
 """

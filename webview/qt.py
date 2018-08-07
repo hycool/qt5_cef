@@ -436,4 +436,14 @@ def quit_application():
 
 
 def exit_python():
-    os._exit(0)
+    import platform
+    import signal
+    if platform.system() == 'Windows':
+        pid = os.getpid()
+        os.kill(pid, signal.CTRL_BREAK_EVENT)
+    else:
+        try:
+            sys.exit(0)
+        except:
+            os._exit(0)
+
