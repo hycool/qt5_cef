@@ -436,7 +436,4 @@ def quit_application():
 
 
 def exit_python():
-    try:
-        sys.exit(0)
-    except SystemExit:
-        os._exit(0)
+    os._exit(0)
