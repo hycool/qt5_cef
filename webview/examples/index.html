@@ -71,15 +71,23 @@
             <span>唤起主窗口：</span>
             window.__cef__.arouse('master')
         </button>
+        <button onclick="batchClose('master')">
+            <span>批量关闭窗口：</span>
+            window.__cef__.arouse('master')
+        </button>
         <br/>
     </div>
     <script>
+        function batchClose() {
+            const cidLists = ([].concat(__cef__.cidLists)).slice(1);
+            __cef__.close(cidLists)
+        }
         function loadUrl() {
             if (window.__cef__) {
                 window.__cef__.open({
                     url: 'http://localhost:8421/qt5_cef/webview/examples/index.html',
                     title: '伯俊软件',
-                    cid: 'hello',
+                    cid: `cid-${Math.round(Math.random() * 1000)}`,
                     payload: {
                         json: { a: 1, b: 2 },
                         array: [1, 2, 3],

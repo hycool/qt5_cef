@@ -70,11 +70,6 @@ class LoadHandler(object):
         self.browser.update_browser_info_one_by_one()
 
 
-# class KeyboardHandler(object):
-#     def OnPreKeyEvent(self, browser, event, event_handle, is_keyboard_shortcut_out):
-#         print(event)
-
-
 class BrowserView(QMainWindow):
     instances = {}
     cid_map = {}
@@ -173,13 +168,17 @@ class BrowserView(QMainWindow):
     def resizeEvent(self, event):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
 
-    def close_window(self):
+    def close_window(self, cid_lists=[]):
         """
         This method can be invoked by Javascript.
         :return:
         """
-        self.view.CloseDevTools()  # 关闭cef的devTools
-        self.close()  # 关闭qt的窗口
+        if len(cid_lists) == 0:
+            self.view.CloseDevTools()  # 关闭cef的devTools
+            self.close()  # 关闭qt的窗口
+        else:
+            for cid in cid_lists:
+                BrowserView.instances[self.get_uid_by_cid(cid)].close()
 
     def close_all_window(self):
         """
@@ -307,6 +306,11 @@ class BrowserView(QMainWindow):
     def set_roo_level(self, level):
         self.view.SetZoomLevel(level)
 
+    def get_uid_by_cid(self, cid):
+        for (uid, value) in BrowserView.cid_map.items():
+            if value == cid:
+                return uid
+
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
@@ -380,7 +384,6 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
 
 def set_client_handler(uid, payload, cid, browser):
     BrowserView.instances[uid].view.SetClientHandler(LoadHandler(uid, payload, cid, browser))
-    # BrowserView.instances[uid].view.SetClientHandler(KeyboardHandler())
 
 
 def set_javascript_bindings(uid):
@@ -444,6 +447,5 @@ def exit_python():
     else:
         try:
             sys.exit(0)
-        except:
+        except SystemExit:
             os._exit(0)
-

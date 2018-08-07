@@ -84,9 +84,17 @@
             window[moduleName].open(params);
         }
     };
-    cef.close = () => {
-        if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
-            window[moduleName]['close_window']();
+    cef.close = (cidLists) => {
+        if (cidLists && Object.prototype.toString.call(cidLists) === '[object Array]') {
+            if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
+                window[moduleName]['close_window'](cidLists);
+            }
+        } else if (!cidLists) {
+            if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
+                window[moduleName]['close_window']();
+            }
+        } else {
+            console.warn('__cef__.close(cidLists): cidLists 的值只能为 undefined 或者 array')
         }
     };
     cef.closeAll = () => {
@@ -149,25 +157,3 @@
     window[pythonCallBack] = python_cef;
     window.CEF_HAS_INITIALIZED = true;
 }());
-
-// 测试阶段的代码
-/*
-
-    cef.getBrowserInfo = (cid, callBackFunction) => {
-        if (typeof cid !== 'string' || cid === '') {
-            console.error('getBrowserInfo(cid, callBackFunction): cid 必须为字符串且不为空字符串');
-            return;
-        }
-        if (typeof callBackFunction !== 'function') {
-            console.error('getBrowserInfo(cid, callBackFunction): callBackFunction 必须为函数');
-            return;
-        }
-        const pythonCallBackName = `cefBrowserCallBackFunction_${Date.now()}`;
-        window[pythonCallBackName] = callBackFunction;
-        if (window[moduleName] && typeof window[moduleName]['get_browser_info'] === 'function') {
-            window[moduleName]['get_browser_info'](cid, pythonCallBackName);
-        }
-    };
-
-
- */

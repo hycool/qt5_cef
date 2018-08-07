@@ -91,9 +91,17 @@ burgeon_cef_sdk_js = """
             window[moduleName].open(params);
         }
     };
-    cef.close = () => {
-        if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
-            window[moduleName]['close_window']();
+    cef.close = (cidLists) => {
+        if (cidLists && Object.prototype.toString.call(cidLists) === '[object Array]') {
+            if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
+                window[moduleName]['close_window'](cidLists);
+            }
+        } else if (!cidLists) {
+            if (window[moduleName] && typeof window[moduleName]['close_window'] === 'function') {
+                window[moduleName]['close_window']();
+            }
+        } else {
+            console.warn('__cef__.close(cidLists): cidLists 的值只能为 undefined 或者 array')
         }
     };
     cef.closeAll = () => {
