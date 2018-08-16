@@ -48,6 +48,10 @@
         当前窗口ID：<span id="browser_id"></span> <br/>
     </h1>
     <div>
+        <button onclick="window.windowInstance.new_qt_window()">
+            <span>弹出QT Window：</span>
+            window.windowInstance.new_qt_window()
+        </button>
         <button onclick="loadUrl()">
             <span>弹出一个新的窗口：</span>
             window.__cef__.open(param: JsonObject)

@@ -1,6 +1,9 @@
 import sys
 import os
 import base64
+import win32gui
+import time
+import subprocess
 from PyQt5 import QtCore
 from threading import Event, Thread
 import webview.constant as constant
@@ -78,7 +81,7 @@ class BrowserView(QMainWindow):
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
     def __init__(self, uid, title, url, width, height, resizable, full_scrren,
-                 min_size, background_color, webview_ready, cid, enable_max):
+                 min_size, background_color, webview_ready, cid, enable_max, window_type='cef'):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         screen = QDesktopWidget().screenGeometry()
@@ -120,23 +123,24 @@ class BrowserView(QMainWindow):
         if not enable_max:
             self.setFixedSize(self.width(), self.height())
 
-        window_info = cef.WindowInfo()
-        rect = [0, 0, self.width(), self.height()]
-        window_info.SetAsChild(int(self.winId()), rect)
+        if window_type == 'cef':
+            window_info = cef.WindowInfo()
+            rect = [0, 0, self.width(), self.height()]
+            window_info.SetAsChild(int(self.winId()), rect)
 
-        setting = {
-            "standard_font_family": "Microsoft YaHei",
-            "default_encoding": "utf-8",
-            "plugins_disabled": True,
-            "tab_to_links_disabled": True,
-            "web_security_disabled": True,
-        }
+            setting = {
+                "standard_font_family": "Microsoft YaHei",
+                "default_encoding": "utf-8",
+                "plugins_disabled": True,
+                "tab_to_links_disabled": True,
+                "web_security_disabled": True,
+            }
 
-        if url is not None:
-            pass
-            self.view = cef.CreateBrowserSync(window_info, url=url, settings=setting)
-        else:
-            self.view = cef.CreateBrowserSync(window_info, url="about:blank", settings=setting)
+            if url is not None:
+                pass
+                self.view = cef.CreateBrowserSync(window_info, url=url, settings=setting)
+            else:
+                self.view = cef.CreateBrowserSync(window_info, url="about:blank", settings=setting)
 
         # self.view.ShowDevTools()
         self.full_screen_trigger.connect(self.toggle_full_screen)
@@ -157,7 +161,10 @@ class BrowserView(QMainWindow):
     def closeEvent(self, event):
         if event.spontaneous():
             event.ignore()
-            self.view.ExecuteFunction('window.python_cef.dispatchCustomEvent', 'windowCloseEvent')
+            if hasattr(self, 'view'):
+                self.view.ExecuteFunction('window.python_cef.dispatchCustomEvent', 'windowCloseEvent')
+            else:
+                event.accept()
         else:
             if self.uid == 'master':
                 quit_application()
@@ -249,10 +256,11 @@ class BrowserView(QMainWindow):
             del BrowserView.cid_map[self.uid]
 
         for browser in BrowserView.instances.values():
-            browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'cidLists',
-                                         list(BrowserView.cid_map.values()))
-            browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'widLists',
-                                         list(BrowserView.cid_map.keys()))
+            if hasattr(browser, 'view'):
+                browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'cidLists',
+                                             list(BrowserView.cid_map.values()))
+                browser.view.ExecuteFunction('window.python_cef.updateCefConfig', 'widLists',
+                                             list(BrowserView.cid_map.keys()))
 
     def focus_browser(self, cid=None):
         if cid is not None and isinstance(cid, str):
@@ -316,6 +324,58 @@ class BrowserView(QMainWindow):
             BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
                                                             event_data)
 
+    def new_qt_window(self):
+        create_qt_view()
+
+
+class Report(QWidget):
+    def __init__(self, child_window):
+        super(Report, self).__init__()
+        self.report_window = child_window
+        embed = self.createWindowContainer(self.report_window, self)
+        window_layout = QHBoxLayout()
+        window_layout.setContentsMargins(0, 0, 0, 0)
+        window_layout.addWidget(embed)
+        self.setLayout(window_layout)
+
+
+def get_handle_id():
+    report_window_title = None
+    report_window_class = 'WindowsForms10.Window.8.app.0.1ca0192_r9_ad1'
+
+    hwnd = win32gui.FindWindow(report_window_class, report_window_title)
+    if hwnd == 0:
+        start = time.time()
+        while hwnd == 0:
+            time.sleep(0.5)
+            hwnd = win32gui.FindWindow(report_window_class, report_window_title)
+            end = time.time()
+            if hwnd != 0 or end - start > 10:
+                return hwnd
+    else:
+        return hwnd
+
+
+def launch_f4_client():
+    exe_path = "D:\\report demo\\FastFish.Client.Pos.Win.exe debug -n:3203401 -p:1234 -b:true -m:false -pid:" + str(
+        os.getpid()) + ' -t:NESTED_F4_REPORT_WINDOW'
+    subprocess.Popen(exe_path)
+
+
+def launch_f4_report_container():
+    qt_window = create_qt_view()
+    t = Thread(target=launch_f4_client)
+    t.start()
+    t.join()
+
+    hwnd = get_handle_id()
+    report_window = QWindow.fromWinId(hwnd)
+    report_window.setFlags(
+        Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.FramelessWindowHint | Qt.WA_TranslucentBackground)
+    window = Report(report_window)
+
+    qt_window.setCentralWidget(window)
+
 
 def html_to_data_uri(html):
     html = html.encode("utf-8", "replace")
@@ -332,6 +392,16 @@ def open_new_window(url, title=default_window_title, payload=None, maximized=Fal
                     width=default_window_width, height=default_window_height, enable_max=True):
     create_browser_view(uid=generate_guid(), url=url, title=title, payload=payload, maximized=maximized,
                         minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
+
+
+def create_qt_view(uid=generate_guid(), url=None, title="", width=default_window_width, height=default_window_height,
+                   resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
+                   background_color="#ffffff", web_view_ready=None, cid='', enable_max=True):
+    qt_view = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
+                          background_color, web_view_ready, cid=cid, enable_max=enable_max, window_type='qt')
+    qt_view.setWindowTitle(str(int(qt_view.winId())))
+    qt_view.show()
+    return qt_view
 
 
 def create_browser_view(uid, title="", url=None, width=default_window_width, height=default_window_height,
@@ -381,6 +451,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
                         full_screen=full_screen, min_size=min_size,
                         background_color=background_color, web_view_ready=web_view_ready, maximized=maximized,
                         minimized=minimized, call_back=call_back)
+    launch_f4_report_container()
     app.exec_()
     app.stop_timer()
     del app
