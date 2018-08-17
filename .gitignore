@@ -2,3 +2,4 @@
 venv/
 webview/__pycache__/
 error.log
+LOGS/

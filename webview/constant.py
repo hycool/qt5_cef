@@ -160,6 +160,20 @@ burgeon_cef_sdk_js = """
             window[moduleName]['arouse_window'](cid);
         }
     };
+    cef.setBrowserPayload = (cid, payload) => {
+        if (typeof cid !== 'string' || cid === '') {
+            console.error('__cef__.setBrowserPayload(cid ,payload): cid 必须为字符类型，且不为空字符串');
+            return;
+        }
+        if (Object.prototype.toString.call(payload) !== '[object Object]') {
+            console.error('__cef__.setBrowserPayload(cid ,payload): payload 必须为JsonObject');
+            return;
+        }
+        if (window[moduleName] && typeof window[moduleName]['set_browser_payload'] === 'function') {
+            window[moduleName]['set_browser_payload'](cid, payload);
+        }
+
+    };
     cef.broadCast = (eventData) => {
         if (eventData && Object.prototype.toString.call(eventData) !== '[object Object]') {
             console.error('__cef__.broadCast(eventData): eventData 为非必填项，如果传值，必须为Json Object');
