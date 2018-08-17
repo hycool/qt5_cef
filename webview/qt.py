@@ -341,7 +341,7 @@ class BrowserView(QMainWindow):
                                                             event_data)
 
     def new_f4_window(self):
-        create_qt_view()
+        create_qt_view(uid=generate_guid())
 
     def nest_f4_report(self):
         nest_f4_report()
@@ -382,8 +382,8 @@ def launch_f4_client():
 
 
 def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
-    f4_window = create_qt_view()
-    offsetTop = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
+    f4_window = create_qt_view(uid=generate_guid(), default_show=False)
+    offset_top = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
     t = Thread(target=launch_f4_client)
     t.start()
     # t.join()
@@ -397,12 +397,12 @@ def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
     f4_window.setCentralWidget(window)
     f4_window.setWindowFlags(Qt.FramelessWindowHint)
     target_window = BrowserView.instances[uid]
-    target_window.f4_window = f4_window
-    target_window.f4_window_geometry = f4_window_geometry
-    f4_window.setParent(target_window)
-    f4_window.show()
-    f4_window.move(0, offsetTop)
-    f4_window.resize(target_window.width(), target_window.height() - offsetTop)
+    target_window.f4_window = f4_window  # 设置内嵌f4_window引用
+    target_window.f4_window_geometry = f4_window_geometry  # 设置内f4_window在父窗口size发生改变时的同步规则
+    f4_window.setParent(target_window)  # 将f4_window作为target_window的子控件
+    f4_window.show()  # 将f4_window显示出来
+    f4_window.move(0, offset_top)  # 移动f4_window 窗口位置（相对于target_window）
+    f4_window.resize(target_window.width(), target_window.height() - offset_top)  # 根据f4_window的应用场景同步其应具备的宽和高
 
 
 def html_to_data_uri(html):
@@ -422,12 +422,14 @@ def open_new_window(url, title=default_window_title, payload=None, maximized=Fal
                         minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
 
 
-def create_qt_view(uid=generate_guid(), url=None, title="", width=default_window_width, height=default_window_height,
+def create_qt_view(uid, url=None, title="", width=default_window_width, height=default_window_height,
                    resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
-                   background_color="#ffffff", web_view_ready=None, cid='', enable_max=True):
+                   background_color="#ffffff", web_view_ready=None, cid='', enable_max=True, default_show=True):
     qt_view = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
                           background_color, web_view_ready, cid=cid, enable_max=enable_max, window_type='qt')
     qt_view.setWindowTitle(str(int(qt_view.winId())))
+    if default_show:
+        qt_view.show()
     return qt_view
 
 
