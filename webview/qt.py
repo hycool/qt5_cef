@@ -78,6 +78,7 @@ class BrowserView(QMainWindow):
     cid_map = {}
 
     full_screen_trigger = QtCore.pyqtSignal()
+    resize_trigger = QtCore.pyqtSignal(int, int)
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
     def __init__(self, uid, title, url, width, height, resizable, full_scrren,
@@ -144,6 +145,7 @@ class BrowserView(QMainWindow):
 
         # self.view.ShowDevTools()
         self.full_screen_trigger.connect(self.toggle_full_screen)
+        self.resize_trigger.connect(self.trigger_window_resize)
         self.load_event.set()
 
         if full_scrren:
@@ -174,6 +176,8 @@ class BrowserView(QMainWindow):
 
     def resizeEvent(self, event):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
+        size = event.size()
+        self.resize_trigger.emit(size.width(), size.height())
 
     def close_window(self, cid_lists=[]):
         """
@@ -226,6 +230,11 @@ class BrowserView(QMainWindow):
             self.showFullScreen()
 
         self.is_full_screen = not self.is_full_screen
+
+    def trigger_window_resize(self, width, height):
+        if hasattr(self, 'f4_window'):
+            self.f4_window.move(0, self.f4_window_geometry['top'])
+            self.f4_window.resize(width, height - self.f4_window_geometry['top'])
 
     def emit_full_screen_signal(self):
         self.full_screen_trigger.emit()
@@ -324,8 +333,11 @@ class BrowserView(QMainWindow):
             BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
                                                             event_data)
 
-    def new_qt_window(self):
+    def new_f4_window(self):
         create_qt_view()
+
+    def nest_f4_report(self):
+        nest_f4_report()
 
 
 class Report(QWidget):
@@ -362,11 +374,11 @@ def launch_f4_client():
     subprocess.Popen(exe_path)
 
 
-def launch_f4_report_container():
-    qt_window = create_qt_view()
+def nest_f4_report(uid='master', f4_window_geometry={'top': 150}):
+    f4_window = create_qt_view()
     t = Thread(target=launch_f4_client)
     t.start()
-    t.join()
+    # t.join()
 
     hwnd = get_handle_id()
     report_window = QWindow.fromWinId(hwnd)
@@ -374,7 +386,15 @@ def launch_f4_report_container():
         Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.FramelessWindowHint | Qt.WA_TranslucentBackground)
     window = Report(report_window)
 
-    qt_window.setCentralWidget(window)
+    f4_window.setCentralWidget(window)
+    f4_window.setWindowFlags(Qt.FramelessWindowHint)
+    target_window = BrowserView.instances[uid]
+    target_window.f4_window = f4_window
+    target_window.f4_window_geometry = f4_window_geometry
+    f4_window.setParent(target_window)
+    f4_window.show()
+    f4_window.move(0, f4_window_geometry['top'])
+    f4_window.resize(target_window.width(), target_window.height() - f4_window_geometry['top'])
 
 
 def html_to_data_uri(html):
@@ -400,7 +420,6 @@ def create_qt_view(uid=generate_guid(), url=None, title="", width=default_window
     qt_view = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
                           background_color, web_view_ready, cid=cid, enable_max=enable_max, window_type='qt')
     qt_view.setWindowTitle(str(int(qt_view.winId())))
-    qt_view.show()
     return qt_view
 
 
@@ -451,7 +470,6 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
                         full_screen=full_screen, min_size=min_size,
                         background_color=background_color, web_view_ready=web_view_ready, maximized=maximized,
                         minimized=minimized, call_back=call_back)
-    launch_f4_report_container()
     app.exec_()
     app.stop_timer()
     del app

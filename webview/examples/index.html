@@ -48,10 +48,16 @@
         当前窗口ID：<span id="browser_id"></span> <br/>
     </h1>
     <div>
+        <button onclick="window.windowInstance.nest_f4_report()">
+            <span>启动F4报表：</span>
+            window.windowInstance.nest_f4_report()
+        </button>
+        <br/>
         <button onclick="window.windowInstance.new_qt_window()">
             <span>弹出QT Window：</span>
             window.windowInstance.new_qt_window()
         </button>
+        <br/>
         <button onclick="loadUrl()">
             <span>弹出一个新的窗口：</span>
             window.__cef__.open(param: JsonObject)
@@ -71,14 +77,17 @@
             <span>切换全屏：</span>
             window.__cef__.toggleFullScreen()
         </button>
+        <br/>
         <button onclick="window.__cef__.arouse('master')">
             <span>唤起主窗口：</span>
             window.__cef__.arouse('master')
         </button>
+        <br/>
         <button onclick="batchClose('master')">
             <span>批量关闭窗口：</span>
             window.__cef__.close(['cid-1', 'cid-2'])
         </button>
+        <br/>
         <button onclick="broadCast()">
             <span>窗口广播：</span>
             window.__cef__.broadCast(eventData)
