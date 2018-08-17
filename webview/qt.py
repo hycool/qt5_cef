@@ -88,8 +88,8 @@ class BrowserView(QMainWindow):
     resize_trigger = QtCore.pyqtSignal(int, int)
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
-    def __init__(self, uid, title, url, width, height, resizable, full_scrren,
-                 min_size, background_color, webview_ready, cid, enable_max, window_type='cef'):
+    def __init__(self, uid, title, url, width, height, resizable, full_screen,
+                 min_size, background_color, web_view_ready, cid, enable_max, window_type='cef'):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         screen = QDesktopWidget().screenGeometry()
@@ -155,14 +155,14 @@ class BrowserView(QMainWindow):
         self.resize_trigger.connect(self.trigger_window_resize)
         self.load_event.set()
 
-        if full_scrren:
+        if full_screen:
             self.emit_full_screen_signal()
 
         self.move(QApplication.desktop().availableGeometry().center() - self.rect().center())
         self.activateWindow()
         self.raise_()
-        if webview_ready is not None:
-            webview_ready.set()
+        if web_view_ready is not None:
+            web_view_ready.set()
 
     def exit_application(self):
         quit_application()
@@ -341,7 +341,7 @@ class BrowserView(QMainWindow):
                                                             event_data)
 
     def new_f4_window(self):
-        create_qt_view(uid=generate_guid())
+        create_qt_view()
 
     def nest_f4_report(self):
         nest_f4_report()
@@ -382,7 +382,7 @@ def launch_f4_client():
 
 
 def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
-    f4_window = create_qt_view(uid=generate_guid(), default_show=False)
+    f4_window = create_qt_view(default_show=False)
     offset_top = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
     t = Thread(target=launch_f4_client)
     t.start()
@@ -422,12 +422,12 @@ def open_new_window(url, title=default_window_title, payload=None, maximized=Fal
                         minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
 
 
-def create_qt_view(uid, url=None, title="", width=default_window_width, height=default_window_height,
-                   resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
-                   background_color="#ffffff", web_view_ready=None, cid='', enable_max=True, default_show=True):
-    qt_view = BrowserView(uid, title, url, width, height, resizable, full_screen, min_size,
-                          background_color, web_view_ready, cid=cid, enable_max=enable_max, window_type='qt')
-    qt_view.setWindowTitle(str(int(qt_view.winId())))
+def create_qt_view(default_show=True):
+    uid = generate_guid()
+    qt_view = BrowserView(uid, title="", url="", width=default_window_width,
+                          height=default_window_height,
+                          resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
+                          background_color="#ffffff", web_view_ready=None, cid=uid, enable_max=True, window_type='qt')
     if default_show:
         qt_view.show()
     return qt_view
