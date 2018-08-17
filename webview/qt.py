@@ -26,6 +26,13 @@ global_icon_path = ''
 
 debug_mode = False
 
+dpi_dict = {
+    '96': 1,
+    '120': 1.25,
+    '144': 1.5,
+    '192': 2
+}
+
 
 class CefApplication(QApplication):
     def __init__(self, args):
@@ -374,8 +381,9 @@ def launch_f4_client():
     subprocess.Popen(exe_path)
 
 
-def nest_f4_report(uid='master', f4_window_geometry={'top': 150}):
+def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
     f4_window = create_qt_view()
+    offsetTop = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
     t = Thread(target=launch_f4_client)
     t.start()
     # t.join()
@@ -393,8 +401,8 @@ def nest_f4_report(uid='master', f4_window_geometry={'top': 150}):
     target_window.f4_window_geometry = f4_window_geometry
     f4_window.setParent(target_window)
     f4_window.show()
-    f4_window.move(0, f4_window_geometry['top'])
-    f4_window.resize(target_window.width(), target_window.height() - f4_window_geometry['top'])
+    f4_window.move(0, offsetTop)
+    f4_window.resize(target_window.width(), target_window.height() - offsetTop)
 
 
 def html_to_data_uri(html):
