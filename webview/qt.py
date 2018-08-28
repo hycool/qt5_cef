@@ -100,7 +100,13 @@ class BrowserView(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         global screen_width
         screen_width = screen.width()
-
+        self.attached_child_list = []  # 存储该窗口的跟随子窗口列表
+        self.responsive_params = {
+            'top': 0,
+            'right': 0,
+            'bottom': 0,
+            'left': 0
+        }  # 当作为某个窗口的跟随子窗口时，如果需要响应式的随着父窗口缩放而改变自身大小，则使用这些参数，表示在窗口自适应过程中，始终距离父窗口四边的距离
         self.uid = uid
         if cid == '':
             self.cid = uid
@@ -266,6 +272,14 @@ class BrowserView(QMainWindow):
             self.f4_window.move(0, self.f4_window_geometry['top'])
             self.f4_window.resize(width, height - self.f4_window_geometry['top'])
 
+        # 处理该窗口的所有跟随子窗口的resize行为
+        for child_window in self.attached_child_list:
+            pixel_ratio = dpi_dict[str(child_window.logicalDpiX())]
+            param = child_window.responsive_params
+            width = width - param['left'] * pixel_ratio - param['right'] * pixel_ratio
+            height = height - param['top'] * pixel_ratio - param['bottom'] * pixel_ratio
+            child_window.resize(width, height)
+
     def emit_full_screen_signal(self):
         self.full_screen_trigger.emit()
 
@@ -382,10 +396,15 @@ class BrowserView(QMainWindow):
             param.setdefault('bottom', default_nest_window_margin)  # 内嵌窗口距离target窗口的底部距离
             param.setdefault('left', default_nest_window_margin)  # 内嵌窗口距离target窗口的左侧距离
             frame_window = create_qt_view(url=param['url'], cid=param['newCid'], default_show=False)
+            frame_window.responsive_params['top'] = param['top']
+            frame_window.responsive_params['right'] = param['right']
+            frame_window.responsive_params['bottom'] = param['bottom']
+            frame_window.responsive_params['left'] = param['left']
             target_uid = self.get_uid_by_cid(param['targetCid'])
             if target_uid is not None:
                 pixel_ratio = dpi_dict[str(frame_window.logicalDpiX())]
                 target_window = BrowserView.instances[target_uid]
+                target_window.attached_child_list.append(frame_window)
                 frame_window.setParent(target_window)
                 frame_window.show()
                 frame_window.move(param['left'] * pixel_ratio, param['top'] * pixel_ratio)
