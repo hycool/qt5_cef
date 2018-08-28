@@ -46,6 +46,7 @@
     <h1>
         当前时间：<span id="random"></span> <br/>
         当前窗口ID：<span id="browser_id"></span> <br/>
+        键盘事件响应：<span id="keydown_text"></span><br/>
     </h1>
     <div>
         <button onclick="window.windowInstance.nest_f4_report()">
@@ -53,9 +54,9 @@
             window.windowInstance.nest_f4_report()
         </button>
         <br/>
-        <button onclick="window.windowInstance.new_f4_window()">
-            <span>弹出QT Window：</span>
-            window.windowInstance.new_f4_window()
+        <button onclick="window.__cef__.nestFrame({ url: 'http://www.baidu.com', newCid: '123456' })">
+            <span>内嵌Iframe Window：</span>
+            window.__cef__.nestFrame(params)
         </button>
         <br/>
         <button onclick="loadUrl()">
@@ -138,6 +139,10 @@
             __cef__.addEventListener('windowCloseEvent', f1);
             __cef__.addEventListener('windowBroadcastEvent', f2);
         }, 10);
+
+        window.onkeydown = ()=> {
+            document.getElementById('keydown_text').innerText = `key down test ${Math.random()}`
+        }
     </script>
 </body>
 </html>

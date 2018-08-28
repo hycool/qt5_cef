@@ -1,6 +1,7 @@
 default_window_width = -1
 default_window_height = -1
 default_window_title = 'FC-POS'
+default_nest_window_margin = 20
 min_window_width = 800
 min_window_height = 600
 
@@ -100,6 +101,16 @@ burgeon_cef_sdk_js = """
         cef.hooks[eventName] = customEventMap[eventName].hooks;
         window.removeEventListener(eventName, eventHook);
     };
+    cef.show = (cid) => {
+        if (window[moduleName] && typeof window[moduleName]['show_window'] === 'function') {
+            window[moduleName]['show_window'](cid);
+        }
+    };
+    cef.hide = (cid) => {
+        if (window[moduleName] && typeof window[moduleName]['hide_window'] === 'function') {
+            window[moduleName]['hide_window'](cid);
+        }
+    };
     cef.open = (params) => {
         if (window[moduleName] && typeof window[moduleName].open === 'function') {
             window[moduleName].open(params);
@@ -183,8 +194,16 @@ burgeon_cef_sdk_js = """
             window[moduleName]['dispatch_customize_event'](customEventMap.windowBroadcastEvent.name, eventData || {});
         }
     };
+    cef.nestFrame = (params) => {
+        if (params && Object.prototype.toString.call(params) !== '[object Object]') {
+            console.error('__cef__.nestFrame(params): params 为非必填项，如果传值，必须为Json Object');
+            return;
+        }
+        if (window[moduleName] && typeof window[moduleName]['nest_frame_window'] === 'function') {
+            window[moduleName]['nest_frame_window'](params);
+        }
+    };
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;
     window.CEF_HAS_INITIALIZED = true;
-}());
-"""
+}());"""

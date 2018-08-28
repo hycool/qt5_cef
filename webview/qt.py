@@ -1,9 +1,10 @@
 import sys
 import os
 import base64
-import win32gui
 import time
+import datetime
 import subprocess
+import platform
 from PyQt5 import QtCore
 from threading import Event, Thread
 import webview.constant as constant
@@ -18,6 +19,7 @@ screen_height = 0
 default_window_width = constant.default_window_width
 default_window_height = constant.default_window_height
 default_window_title = constant.default_window_title
+default_nest_window_margin = constant.default_nest_window_margin
 min_window_width = constant.min_window_width
 min_window_height = constant.min_window_height
 cef_sdk = constant.burgeon_cef_sdk_js
@@ -26,6 +28,7 @@ global_icon_path = ''
 
 debug_mode = False
 
+# dpi 所对应的缩放比
 dpi_dict = {
     '96': 1,
     '120': 1.25,
@@ -88,8 +91,10 @@ class BrowserView(QMainWindow):
     resize_trigger = QtCore.pyqtSignal(int, int)
     sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 
-    def __init__(self, uid, title, url, width, height, resizable, full_screen,
-                 min_size, background_color, web_view_ready, cid, enable_max, window_type='cef'):
+    def __init__(self, uid, title="", url="", width=default_window_width,
+                 height=default_window_height,
+                 resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
+                 background_color="#ffffff", web_view_ready=None, cid='', enable_max=True, window_type='cef'):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         screen = QDesktopWidget().screenGeometry()
@@ -167,6 +172,10 @@ class BrowserView(QMainWindow):
     def exit_application(self):
         quit_application()
 
+    def changeEvent(self, event):
+        if self.isActiveWindow() and hasattr(self, 'view'):
+            self.view.SetFocus(True)
+
     def closeEvent(self, event):
         if event.spontaneous():
             event.ignore()
@@ -185,6 +194,20 @@ class BrowserView(QMainWindow):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
         size = event.size()
         self.resize_trigger.emit(size.width(), size.height())
+
+    def show_window(self, cid=''):
+        uid = self.get_uid_by_cid(cid)
+        if cid == '' or cid is None:
+            self.show()
+        elif uid is not None:
+            BrowserView.instances[uid].show()
+
+    def hide_window(self, cid=''):
+        uid = self.get_uid_by_cid(cid)
+        if cid == '' or cid is None:
+            self.hide()
+        elif uid is not None:
+            BrowserView.instances[uid].hide()
 
     def close_window(self, cid_lists=[]):
         """
@@ -337,14 +360,39 @@ class BrowserView(QMainWindow):
 
     def dispatch_customize_event(self, event_name='', event_data={}):
         for uid in BrowserView.instances.keys():
-            BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
-                                                            event_data)
+            if hasattr(BrowserView.instances[uid], 'view'):
+                BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
+                                                                event_data)
 
     def new_f4_window(self):
-        create_qt_view()
+        create_qt_view(window_type='qt')
 
     def nest_f4_report(self):
         nest_f4_report()
+
+    def nest_frame_window(self, param={}):
+        if param is None:
+            param = {}
+        if isinstance(param, dict):
+            param.setdefault('newCid', '')  # 新窗口的cid
+            param.setdefault('targetCid', 'master')  # 目标窗口cid
+            param.setdefault('url', '')  # 新窗口将要加载的url
+            param.setdefault('top', default_nest_window_margin)  # 内嵌窗口距离target窗口的顶部距离
+            param.setdefault('right', default_nest_window_margin)  # 内嵌窗口距离target窗口的右侧距离
+            param.setdefault('bottom', default_nest_window_margin)  # 内嵌窗口距离target窗口的底部距离
+            param.setdefault('left', default_nest_window_margin)  # 内嵌窗口距离target窗口的左侧距离
+            frame_window = create_qt_view(url=param['url'], cid=param['newCid'], default_show=False)
+            target_uid = self.get_uid_by_cid(param['targetCid'])
+            if target_uid is not None:
+                pixel_ratio = dpi_dict[str(frame_window.logicalDpiX())]
+                target_window = BrowserView.instances[target_uid]
+                frame_window.setParent(target_window)
+                frame_window.show()
+                frame_window.move(param['left'] * pixel_ratio, param['top'] * pixel_ratio)
+                width = target_window.width() - param['left'] * pixel_ratio - param['right'] * pixel_ratio
+                height = target_window.height() - param['top'] * pixel_ratio - param['bottom'] * pixel_ratio
+                frame_window.resize(width, height)
+                frame_window.setWindowFlags(Qt.FramelessWindowHint)
 
 
 class Report(QWidget):
@@ -361,18 +409,19 @@ class Report(QWidget):
 def get_handle_id():
     report_window_title = None
     report_window_class = 'WindowsForms10.Window.8.app.0.1ca0192_r9_ad1'
-
-    hwnd = win32gui.FindWindow(report_window_class, report_window_title)
-    if hwnd == 0:
-        start = time.time()
-        while hwnd == 0:
-            time.sleep(0.5)
-            hwnd = win32gui.FindWindow(report_window_class, report_window_title)
-            end = time.time()
-            if hwnd != 0 or end - start > 10:
-                return hwnd
-    else:
-        return hwnd
+    if platform.system() == 'Windows':
+        import win32gui
+        hwnd = win32gui.FindWindow(report_window_class, report_window_title)
+        if hwnd == 0:
+            start = time.time()
+            while hwnd == 0:
+                time.sleep(0.5)
+                hwnd = win32gui.FindWindow(report_window_class, report_window_title)
+                end = time.time()
+                if hwnd != 0 or end - start > 10:
+                    return hwnd
+        else:
+            return hwnd
 
 
 def launch_f4_client():
@@ -382,7 +431,7 @@ def launch_f4_client():
 
 
 def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
-    f4_window = create_qt_view(default_show=False)
+    f4_window = create_qt_view(default_show=False, window_type='qt')
     offset_top = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
     t = Thread(target=launch_f4_client)
     t.start()
@@ -422,12 +471,12 @@ def open_new_window(url, title=default_window_title, payload=None, maximized=Fal
                         minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
 
 
-def create_qt_view(default_show=True):
+def create_qt_view(default_show=True, window_type='cef', url='', cid=''):
     uid = generate_guid()
-    qt_view = BrowserView(uid, title="", url="", width=default_window_width,
-                          height=default_window_height,
-                          resizable=True, full_screen=False, min_size=(min_window_width, min_window_height),
-                          background_color="#ffffff", web_view_ready=None, cid=uid, enable_max=True, window_type='qt')
+    qt_view = BrowserView(uid, window_type=window_type, url=url, cid=cid)
+    if window_type == 'cef':
+        set_client_handler(uid, None, cid=cid, browser=qt_view)
+        set_javascript_bindings(uid)
     if default_show:
         qt_view.show()
     return qt_view
@@ -461,6 +510,9 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     global_icon_path = icon_path
     global app
     app = CefApplication(sys.argv)
+    app_name = 'FC-POS Copyright©2017-{currentYear} Burgeon. All Rights Reserved.'.format(
+        currentYear=datetime.datetime.now().year)
+    app.setApplicationName(app_name)
     settings = {
         'context_menu': {'enabled': context_menu},
         'auto_zooming': 0.0,
@@ -469,7 +521,7 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     switches = {
         'disable-gpu': ''
     }
-    # gpu 硬件加速在mac上跑步起来，暂时注释
+    # gpu 硬件加速在mac上跑不起来，暂时注释
     # if platform.system() == 'Windows':
     #     from gpuinfo.windows import get_gpus
     #     if len(get_gpus()) == 0:
@@ -494,6 +546,7 @@ def set_javascript_bindings(uid):
     bindings = cef.JavascriptBindings(bindToFrames=False, bindToPopups=False)
     bindings.SetProperty("cefPython3", cef.GetVersion())
     bindings.SetProperty('windowId', uid)
+    bindings.SetProperty('system', platform.system())
     bindings.SetObject('windowInstance', BrowserView.instances[uid])
     BrowserView.instances[uid].view.SetJavascriptBindings(bindings)
 

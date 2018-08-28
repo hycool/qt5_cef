@@ -55,7 +55,6 @@ def create_window(title=default_window_title, url=None, uid='master', width=defa
                   full_screen=False,
                   min_size=(min_window_width, min_window_height), background_color='#FFFFFF', context_menu=False,
                   url_type='document', maximized=True, minimized=False, icon_path='', call_back=None):
-    print('icon_path = ', icon_path)
     web_view_ready.clear()
     format_url = url
     if url_type == 'string':
@@ -68,7 +67,3 @@ def create_window(title=default_window_title, url=None, uid='master', width=defa
 
 def evaluate_js(script, uid='master'):
     gui.execute_javascript(script, uid)
-
-
-def set_cookies(cookies):
-    gui.set_cookies(cookies)
