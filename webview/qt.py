@@ -142,6 +142,7 @@ class BrowserView(QMainWindow):
         # 禁用窗口最大化
         if not enable_max:
             self.setFixedSize(self.width(), self.height())
+            self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint | Qt.MSWindowsFixedSizeDialogHint)
 
         if window_type == 'cef':
             window_info = cef.WindowInfo()
@@ -537,11 +538,15 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     app_name = 'FC-POS Copyright©2017-{currentYear} Burgeon. All Rights Reserved.'.format(
         currentYear=datetime.datetime.now().year)
     app.setApplicationName(app_name)
+    cef_work_path = os.path.join(os.environ['ALLUSERSPROFILE'], 'Burgeon', 'CEF')
     settings = {
         'context_menu': {'enabled': context_menu},
         'auto_zooming': 0.0,
         'user_agent': user_agent,
-        'cache_path': os.path.join(os.environ['ALLUSERSPROFILE'], 'Burgeon', 'CEF')
+        'cache_path': cef_work_path,
+        'persist_user_preferences': True,
+        'remote_debugging_port': 3333,
+        'framework_dir_path': cef_work_path
     }
     switches = {
         'disable-gpu': ''

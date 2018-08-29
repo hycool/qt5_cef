@@ -46,6 +46,7 @@ __cef__.removeEventListener('windowCloseEvent', eventHook);
 __cef__.show(); // 无参调用，显示当前窗口
 __cef__.show('the_string_of_cid'); // 携参调用，显示指定cid标识的窗口
 
+
 /***
  * Function Name: __cef__.hide(cid:String)
  * description: 将指定cid所对应的窗口，从普通显示状态（show）切换为隐藏状态（hide）
@@ -91,7 +92,7 @@ __cef__.open({
  * Function Name: __cef__.close(cidLists:Array)
  * description: 关闭窗口
  */
-__cef__.close();  // 无惨调用表示关闭当前窗口本身。
+__cef__.close();  // 无参调用表示关闭当前窗口本身。
 __cef__.close(['cid-one', 'cid-two', 'cid-N']);  // 携参调用，表示关闭['cid-one', 'cid-two', 'cid-N']中的窗口。
 
 
