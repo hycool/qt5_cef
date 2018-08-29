@@ -36,7 +36,6 @@ __cef__.addEventListener('windowCloseEvent', eventHook);
  * Function Name: __cef__.removeEventListener(eventName:String, eventHook:Function)
  * description: 移除注册在eventName上的eventHook监听器（监听函数）
  */
-const eventHook = () => { console.log('event hook test') };
 __cef__.removeEventListener('windowCloseEvent', eventHook);
 
 
