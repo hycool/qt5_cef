@@ -14,6 +14,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+pixel_ratio = 1
 screen_width = 0
 screen_height = 0
 default_window_width = constant.default_window_width
@@ -274,7 +275,9 @@ class BrowserView(QMainWindow):
 
         # 处理该窗口的所有跟随子窗口的resize行为
         for child_window in self.attached_child_list:
-            pixel_ratio = dpi_dict[str(child_window.logicalDpiX())]
+            global pixel_ratio
+            if platform.system() == 'Windows':
+                pixel_ratio = dpi_dict[str(child_window.logicalDpiX())]
             param = child_window.responsive_params
             width = width - param['left'] * pixel_ratio - param['right'] * pixel_ratio
             height = height - param['top'] * pixel_ratio - param['bottom'] * pixel_ratio
@@ -402,7 +405,9 @@ class BrowserView(QMainWindow):
             frame_window.responsive_params['left'] = param['left']
             target_uid = self.get_uid_by_cid(param['targetCid'])
             if target_uid is not None:
-                pixel_ratio = dpi_dict[str(frame_window.logicalDpiX())]
+                global pixel_ratio
+                if platform.system() == 'Windows':
+                    pixel_ratio = dpi_dict[str(frame_window.logicalDpiX())]
                 target_window = BrowserView.instances[target_uid]
                 target_window.attached_child_list.append(frame_window)
                 frame_window.setParent(target_window)

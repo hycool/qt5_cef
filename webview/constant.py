@@ -1,7 +1,7 @@
 default_window_width = -1
 default_window_height = -1
 default_window_title = 'FC-POS'
-default_nest_window_margin = 20
+default_nest_window_margin = 0
 min_window_width = 800
 min_window_height = 600
 
