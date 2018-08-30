@@ -195,7 +195,11 @@
             window[moduleName]['nest_frame_window'](params);
         }
     };
+    cef.CEF_INFO = {
+        window_initialize_time: Date.now()
+    };
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;
     window.CEF_HAS_INITIALIZED = true;
+
 }());

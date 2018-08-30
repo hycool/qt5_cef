@@ -538,24 +538,29 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
     app_name = 'FC-POS Copyright©2017-{currentYear} Burgeon. All Rights Reserved.'.format(
         currentYear=datetime.datetime.now().year)
     app.setApplicationName(app_name)
-    cef_work_path = os.path.join(os.environ['ALLUSERSPROFILE'], 'Burgeon', 'CEF')
+    cef_work_path = ''
+    if platform.system() == 'Windows':
+        cef_work_path = os.environ['ALLUSERSPROFILE']
+    elif platform.system() == 'Darwin':
+        cef_work_path = os.environ['HOME']
+    cache_path = os.path.join(cef_work_path, 'Burgeon', 'CEF')
     settings = {
         'context_menu': {'enabled': context_menu},
         'auto_zooming': 0.0,
         'user_agent': user_agent,
-        'cache_path': cef_work_path,
+        'cache_path': cache_path,
         'persist_user_preferences': True,
         'remote_debugging_port': 3333,
-        'framework_dir_path': cef_work_path
+        # 'framework_dir_path': cef_work_path
     }
     switches = {
         'disable-gpu': ''
     }
     # gpu 硬件加速在mac上跑不起来，暂时注释
-    if platform.system() == 'Windows':
-        from gpuinfo.windows import get_gpus
-        if len(get_gpus()) == 0:
-            switches.setdefault('disable-gpu', '')
+    # if platform.system() == 'Windows':
+    #     from gpuinfo.windows import get_gpus
+    #     if len(get_gpus()) == 0:
+    #         switches.setdefault('disable-gpu', '')
 
     cef.Initialize(settings=settings, switches=switches)
     create_browser_view(uid=uid, title=title, url=url, width=width, height=height, resizable=resizable,
