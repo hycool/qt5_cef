@@ -139,10 +139,11 @@ class BrowserView(QMainWindow):
             self.setFixedSize(width, height)
 
         self.setMinimumSize(min_size[0], min_size[1])
+        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
         # 禁用窗口最大化
         if not enable_max:
             self.setFixedSize(self.width(), self.height())
-            self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint | Qt.MSWindowsFixedSizeDialogHint)
+            self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
 
         if window_type == 'cef':
             window_info = cef.WindowInfo()
