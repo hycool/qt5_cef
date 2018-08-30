@@ -569,16 +569,10 @@ def launch_main_window(uid, title, url, width, height, resizable, full_screen, m
         'cache_path': cache_path,
         'persist_user_preferences': True,
         'remote_debugging_port': 3333,
-        # 'framework_dir_path': cef_work_path
     }
     switches = {
         'disable-gpu': ''
     }
-    # gpu 硬件加速在mac上跑不起来，暂时注释
-    # if platform.system() == 'Windows':
-    #     from gpuinfo.windows import get_gpus
-    #     if len(get_gpus()) == 0:
-    #         switches.setdefault('disable-gpu', '')
 
     cef.Initialize(settings=settings, switches=switches)
     create_browser_view(uid=uid, title=title, url=url, width=width, height=height, resizable=resizable,
