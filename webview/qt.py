@@ -64,24 +64,41 @@ class LoadHandler(object):
         self.uid = uid
         self.cid = cid
         self.browser = browser
+        self.main_frame_load_start_time = 0
+        self.main_frame_load_end_time = 0
 
     def OnLoadStart(self, browser, frame):
-        if debug_mode:
-            with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
-                browser.ExecuteJavascript(js.read())
-        else:
-            browser.ExecuteJavascript(cef_sdk)
-        append_payload(self.uid, self.payload, self.cid)
-        self.browser.update_browser_info_one_by_one()
+        if frame.IsMain():
+            if debug_mode:
+                with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
+                    browser.ExecuteJavascript(js.read())
+            else:
+                browser.ExecuteJavascript(cef_sdk)
+            self.main_frame_load_start_time = time.time()
+            append_payload(self.uid, self.payload, self.cid)
+            browser.ExecuteJavascript('window.__cef__.CEF_INFO.start_load_timestamp = {start_load_timestamp}'.format(
+                start_load_timestamp=self.main_frame_load_start_time))
+            self.browser.update_browser_info_one_by_one()
+
+    def OnLoadEnd(self, browser, frame, http_code):
+        if frame.IsMain():
+            self.main_frame_load_end_time = time.time()
+            load_time_cost = self.main_frame_load_end_time - self.main_frame_load_start_time
+            browser.ExecuteJavascript('window.__cef__.CEF_INFO.end_load_timestamp = {start_load_timestamp}'.format(
+                start_load_timestamp=self.main_frame_load_end_time))
+            browser.ExecuteJavascript('window.__cef__.CEF_INFO.loadTimeCost = {time_cost}'.format(
+                time_cost=load_time_cost))
+            print('load cost = ', load_time_cost)
 
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
-        if debug_mode:
-            with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
-                browser.ExecuteJavascript(js.read())
-        else:
-            browser.ExecuteJavascript(cef_sdk)
-        append_payload(self.uid, self.payload, self.cid)
-        self.browser.update_browser_info_one_by_one()
+        if frame.IsMain():
+            if debug_mode:
+                with open(os.path.dirname(__file__) + '/burgeon.cef.sdk.js', 'r', encoding='UTF-8') as js:
+                    browser.ExecuteJavascript(js.read())
+            else:
+                browser.ExecuteJavascript(cef_sdk)
+            append_payload(self.uid, self.payload, self.cid)
+            self.browser.update_browser_info_one_by_one()
 
 
 class BrowserView(QMainWindow):
