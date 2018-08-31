@@ -195,6 +195,11 @@
             window[moduleName]['nest_frame_window'](params);
         }
     };
+    cef.refreshWindowGeometry = (cid) => {
+        if (window[moduleName] && typeof window[moduleName]['update_window_geometry'] === 'function') {
+            window[moduleName]['update_window_geometry'](cid);
+        }
+    };
     cef.CEF_INFO = {};
     window[sdkModuleName] = cef;
     window[pythonCallBack] = python_cef;

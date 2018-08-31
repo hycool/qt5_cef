@@ -17,7 +17,14 @@ __cef__.hooks      Object  hooks(cef event listener hooks) 表示当前窗口中
                    windowCloseEvent：窗口关闭事件，使用__cef__.addEventListener监听该事件，当窗口关闭时，会触发相对应的回调。
                    需要注意的是，如果在窗口中为该事件添加了事件监听器，那么系统会默认阻止窗口关闭行为，用户要关闭窗口必须在回调中主动调用相对应的窗口关闭方法。
 __cef__.payload    Object  payload(挂载数据)，用于在窗口间传递数据。当从A窗口，调用__cef__.open(params)方法打开新窗口B时，如果B想获取从A传递过来的数据，则取该值。
-
+__cef__.CEF_INFO   Object  CEF_INFO对象中记录了一些系统信息，供开发者获取。
+                   e.g CEF_INFO: Object
+                         end_load_timestamp: 1535680641.3313625  // 页面内所有资源加载完成的时间点
+                         loadTimeCost: 0.21888351440429688  // 页面所有内容加载耗时，单位（秒）
+                         start_load_timestamp: 1535680641.112479 // 页面开始加载的时间点
+                         windowLogicalHeight: 1001 // 当前窗口物理像素高度
+                         windowLogicalWidth: 1920 // 当前窗口物理像素宽度
+                    注意：windowLogicalHeight 和 windowLogicalWidth 两个属性，只有在页面内调用__cef__.refreshWindowGeometry(cid:String)后才会有值。
 * */
 
 
@@ -160,3 +167,11 @@ __cef__.nestFrame({
     bottom: Number,    // 内嵌窗口距离父窗口底部像素距离，默认为0逻辑像素
     left: Number,      // 内嵌窗口距离父窗口左侧像素距离，默认为0逻辑像素
 });
+
+
+/**
+ * Function Name: __cef__.refreshWindowGeometry(cid:String)
+ * description: 刷新窗口的几何（Geometry）信息
+ */
+__cef__.refreshWindowGeometry(); // 无参调用，刷新当前窗口信息
+__cef__.refreshWindowGeometry('cid'); // 携参调用，刷新指定cid所标识的窗口信息

@@ -437,6 +437,19 @@ class BrowserView(QMainWindow):
                 frame_window.resize(width, height)
                 frame_window.setWindowFlags(Qt.FramelessWindowHint)
 
+    def update_window_geometry(self, cid=None):
+        if cid is None:
+            uid = self.uid
+        else:
+            uid = self.get_uid_by_cid(cid)
+        print('uid = ', uid)
+        BrowserView.instances[uid].view.ExecuteJavascript(
+            'window.__cef__.CEF_INFO.windowLogicalWidth = {windowLogicalWidth}'.format(
+                windowLogicalWidth=self.width()))
+        BrowserView.instances[uid].view.ExecuteJavascript(
+            'window.__cef__.CEF_INFO.windowLogicalHeight = {windowLogicalHeight}'.format(
+                windowLogicalHeight=self.height()))
+
 
 class Report(QWidget):
     def __init__(self, child_window):
