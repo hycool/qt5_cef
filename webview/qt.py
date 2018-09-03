@@ -5,6 +5,7 @@ import time
 import datetime
 import subprocess
 import platform
+import re
 from PyQt5 import QtCore
 from threading import Event, Thread
 import webview.constant as constant
@@ -78,6 +79,8 @@ class LoadHandler(object):
             append_payload(self.uid, self.payload, self.cid)
             browser.ExecuteJavascript('window.__cef__.CEF_INFO.start_load_timestamp = {start_load_timestamp}'.format(
                 start_load_timestamp=self.main_frame_load_start_time))
+            browser.ExecuteJavascript(
+                'window.__cef__.CEF_INFO.language = "{language}"'.format(language=get_system_language()))
             self.browser.update_browser_info_one_by_one()
 
     def OnLoadEnd(self, browser, frame, http_code):
@@ -466,6 +469,10 @@ class Report(QWidget):
         self.setLayout(window_layout)
 
 
+def get_system_language():
+    return re.sub(r'-', '_', str(QLocale().uiLanguages()[0]))
+
+
 def get_handle_id():
     report_window_title = None
     report_window_class = 'WindowsForms10.Window.8.app.0.1ca0192_r9_ad1'
@@ -611,6 +618,7 @@ def set_javascript_bindings(uid):
     bindings.SetProperty("cefPython3", cef.GetVersion())
     bindings.SetProperty('windowId', uid)
     bindings.SetProperty('system', platform.system())
+    bindings.SetProperty('systemLanguage', get_system_language())
     bindings.SetObject('windowInstance', BrowserView.instances[uid])
     BrowserView.instances[uid].view.SetJavascriptBindings(bindings)
 

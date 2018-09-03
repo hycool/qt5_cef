@@ -1,10 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<script>
-    console.log('------------------');
-    window.window_start_load_time = Date.now();
-    console.log(Date.now());
-</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -103,7 +98,6 @@
         window.__cef__.broadCast(eventData)
     </button>
     <br/>
-    <iframe src="about:blank"></iframe>
 </div>
 <script>
     function broadCast() {
@@ -156,47 +150,10 @@
         setTimeout(() => {
             __cef__.addEventListener('windowCloseEvent', f1);
             __cef__.addEventListener('windowBroadcastEvent', f2);
+            console.log(Date.now() - __cef__.CEF_INFO.window_initialize_time);
         }, 0);
     };
 
-</script>
-<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/bootstrap/4.1.1/js/bootstrap.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/react/16.4.0/umd/react.development.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/redux/4.0.0/redux.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/ag-grid/17.1.1/ag-grid.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/d3/4.13.0/d3.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/three.js/92/three.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/highcharts/6.0.7/highcharts.js"></script>
-<script>
-    console.log(Date.now());
-</script>
-<script src="https://cdn.bootcss.com/redux/4.0.0/redux.js"></script>
-<script>
-    console.log(Date.now());
-    console.log((Date.now() - window.window_start_load_time) / 1000);
-    console.log('------------------');
 </script>
 </body>
 </html>

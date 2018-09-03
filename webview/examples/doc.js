@@ -22,6 +22,7 @@ __cef__.CEF_INFO   Object  CEF_INFO对象中记录了一些系统信息，供开
                          end_load_timestamp: 1535680641.3313625  // 页面内所有资源加载完成的时间点
                          loadTimeCost: 0.21888351440429688  // 页面所有内容加载耗时，单位（秒）
                          start_load_timestamp: 1535680641.112479 // 页面开始加载的时间点
+                         systemLanguage: 'zh_CN'    // 当前操作系统的语言
                          windowLogicalHeight: 1001 // 当前窗口物理像素高度
                          windowLogicalWidth: 1920 // 当前窗口物理像素宽度
                     注意：windowLogicalHeight 和 windowLogicalWidth 两个属性，只有在页面内调用__cef__.refreshWindowGeometry(cid:String)后才会有值。
@@ -162,6 +163,7 @@ __cef__.nestFrame({
     newCid: String,    // 必填，表示创建的内嵌窗口的cid
     targetCid: String, // 必填，表示将创建的窗口内嵌到cid = targetCid的目标窗口中
     url: String,       // 非必填，如果创建的内嵌窗口需要加载额外的新地址，则url为加载目标地址
+    payload: Object,   // 非必填，表示希望向打开的内嵌新窗口中传递的数据。payload必须是对象，且每个属性不能为函数类型。
     top: Number,       // 内嵌窗口距离父窗口顶部像素距离，默认为0逻辑像素
     right: Number,     // 内嵌窗口距离父窗口右侧像素距离，默认为0逻辑像素
     bottom: Number,    // 内嵌窗口距离父窗口底部像素距离，默认为0逻辑像素
