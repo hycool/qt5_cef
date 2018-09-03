@@ -327,8 +327,10 @@ class BrowserView(QMainWindow):
     def update_browser_info_one_by_one(self, increase=True):
         # 移除窗口实例
         if not increase:
-            del BrowserView.instances[self.uid]
-            del BrowserView.cid_map[self.uid]
+            if self.uid in BrowserView.instances.keys():
+                del BrowserView.instances[self.uid]
+            if self.uid in BrowserView.cid_map.keys():
+                del BrowserView.cid_map[self.uid]
 
         for browser in BrowserView.instances.values():
             if hasattr(browser, 'view'):
@@ -413,11 +415,13 @@ class BrowserView(QMainWindow):
             param.setdefault('newCid', '')  # 新窗口的cid
             param.setdefault('targetCid', 'master')  # 目标窗口cid
             param.setdefault('url', '')  # 新窗口将要加载的url
+            param.setdefault('payload', {})  # 需要传递给新窗口的挂载数据
             param.setdefault('top', default_nest_window_margin)  # 内嵌窗口距离target窗口的顶部距离
             param.setdefault('right', default_nest_window_margin)  # 内嵌窗口距离target窗口的右侧距离
             param.setdefault('bottom', default_nest_window_margin)  # 内嵌窗口距离target窗口的底部距离
             param.setdefault('left', default_nest_window_margin)  # 内嵌窗口距离target窗口的左侧距离
-            frame_window = create_qt_view(url=param['url'], cid=param['newCid'], default_show=False)
+            frame_window = create_qt_view(url=param['url'], cid=param['newCid'], default_show=False,
+                                          payload=param['payload'])
             frame_window.responsive_params['top'] = param['top']
             frame_window.responsive_params['right'] = param['right']
             frame_window.responsive_params['bottom'] = param['bottom']
@@ -527,11 +531,11 @@ def open_new_window(url, title=default_window_title, payload=None, maximized=Fal
                         minimized=minimized, cid=cid, width=width, height=height, enable_max=enable_max)
 
 
-def create_qt_view(default_show=True, window_type='cef', url='', cid=''):
+def create_qt_view(default_show=True, window_type='cef', url='', cid='', payload={}):
     uid = generate_guid()
     qt_view = BrowserView(uid, window_type=window_type, url=url, cid=cid)
     if window_type == 'cef':
-        set_client_handler(uid, None, cid=cid, browser=qt_view)
+        set_client_handler(uid, payload=payload, cid=cid, browser=qt_view)
         set_javascript_bindings(uid)
     if default_show:
         qt_view.show()
