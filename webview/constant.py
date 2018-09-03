@@ -4,6 +4,16 @@ default_window_title = 'FC-POS'
 default_nest_window_margin = 0
 min_window_width = 800
 min_window_height = 600
+language_locale = {
+    '25': {
+        'name': 'Chinese',
+        'locale': 'zh_CN'
+    },
+    '59': {
+        'name': 'Japanese',
+        'locale': 'ja'
+    }
+}
 
 burgeon_cef_sdk_js = """
 (function () {

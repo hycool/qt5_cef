@@ -25,6 +25,7 @@ default_nest_window_margin = constant.default_nest_window_margin
 min_window_width = constant.min_window_width
 min_window_height = constant.min_window_height
 cef_sdk = constant.burgeon_cef_sdk_js
+language_locale = constant.language_locale
 
 global_icon_path = ''
 
@@ -248,7 +249,13 @@ class BrowserView(QMainWindow):
             self.close()  # 关闭qt的窗口
         else:
             for cid in cid_lists:
-                BrowserView.instances[self.get_uid_by_cid(cid)].close()
+                uid = self.get_uid_by_cid(cid)
+                if uid in BrowserView.instances.keys():
+                    BrowserView.instances[uid].close()
+                else:
+                    print(cid)
+                    self.view.ExecuteFunction('window.python_cef.console', '不存在 cid = {cid} 的窗口'.format(cid=cid),
+                                              'warn')
 
     def close_all_window(self):
         """
@@ -470,7 +477,11 @@ class Report(QWidget):
 
 
 def get_system_language():
-    return re.sub(r'-', '_', str(QLocale().uiLanguages()[0]))
+    language_code = QLocale().language()
+    if str(language_code) in language_locale.keys():
+        return language_locale[str(language_code)]['locale']
+    else:
+        return 'en_US'
 
 
 def get_handle_id():
