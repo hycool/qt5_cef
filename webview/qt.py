@@ -5,7 +5,6 @@ import time
 import datetime
 import subprocess
 import platform
-import re
 from PyQt5 import QtCore
 from threading import Event, Thread
 import webview.constant as constant
@@ -120,8 +119,9 @@ class BrowserView(QMainWindow):
         super(BrowserView, self).__init__()
         BrowserView.instances[uid] = self
         screen = QDesktopWidget().screenGeometry()
-        global screen_width
+        global screen_width, screen_height
         screen_width = screen.width()
+        screen_height = screen.height()
         self.attached_child_list = []  # 存储该窗口的跟随子窗口列表
         self.responsive_params = {
             'top': 0,
@@ -143,7 +143,7 @@ class BrowserView(QMainWindow):
         if width != -1 and height != -1:
             self.resize(width, height)
         else:
-            self.resize(screen_width * 0.5, screen_width * 0.5 * 0.618)
+            self.resize(screen_width * 0.85, screen_height * 0.8)
 
         self.title = title
         self.setWindowTitle(title)
