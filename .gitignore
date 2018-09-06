@@ -4,3 +4,4 @@ webview/__pycache__/
 error.log
 LOGS/
 xml/
+test/
