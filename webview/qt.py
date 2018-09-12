@@ -485,31 +485,49 @@ def get_system_language():
 
 
 def get_handle_id():
-    report_window_title = None
-    report_window_class = 'WindowsForms10.Window.8.app.0.1ca0192_r9_ad1'
+    third_party_application_title = 'NESTED_F4_REPORT_WINDOW'
+    # third_party_application_window_class = 'WindowsForms10.Window.8.app.0.329445b_r9_ad1'
     if platform.system() == 'Windows':
         import win32gui
-        hwnd = win32gui.FindWindow(report_window_class, report_window_title)
-        if hwnd == 0:
-            start = time.time()
-            while hwnd == 0:
-                time.sleep(0.5)
-                hwnd = win32gui.FindWindow(report_window_class, report_window_title)
-                end = time.time()
-                if hwnd != 0 or end - start > 10:
-                    return hwnd
-        else:
-            return hwnd
+        # hwnd = win32gui.FindWindow(None, report_window_title)
+        # if hwnd == 0:
+        #     start = time.time()
+        #     while hwnd == 0:
+        #         time.sleep(0.5)
+        #         hwnd = win32gui.FindWindow(report_window_class, report_window_title)
+        #         end = time.time()
+        #         if hwnd != 0 or end - start > 10:
+        #             return hwnd
+        # else:
+        #     return hwnd
+
+        hwnd = 0
+
+        def call_back(item_hwnd, window_title):
+            if win32gui.IsWindow(item_hwnd) and win32gui.IsWindowEnabled(item_hwnd) and win32gui.IsWindowVisible(
+                    item_hwnd) and win32gui.GetWindowText(item_hwnd) == window_title:
+                nonlocal hwnd
+                hwnd = item_hwnd
+
+        win32gui.EnumWindows(call_back, third_party_application_title)
+        return hwnd
 
 
 def launch_f4_client():
-    exe_path = "D:\\report demo\\FastFish.Client.Pos.Win.exe debug -n:3203401 -p:1234 -b:true -m:false -pid:" + str(
-        os.getpid()) + ' -t:NESTED_F4_REPORT_WINDOW'
+    exe_path = \
+        "D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe debug " \
+        "-n:3203401 " \
+        "-p:1234 " \
+        "-b:true " \
+        "-m:false " \
+        "-pid:" + str(os.getpid()) + \
+        ' -t:NESTED_F4_REPORT_WINDOW'
     subprocess.Popen(exe_path)
 
 
 def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
     f4_window = create_qt_view(default_show=False, window_type='qt')
+    target_window = BrowserView.instances[uid]
     offset_top = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
     t = Thread(target=launch_f4_client)
     t.start()
@@ -523,7 +541,6 @@ def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
 
     f4_window.setCentralWidget(window)
     f4_window.setWindowFlags(Qt.FramelessWindowHint)
-    target_window = BrowserView.instances[uid]
     target_window.f4_window = f4_window  # 设置内嵌f4_window引用
     target_window.f4_window_geometry = f4_window_geometry  # 设置内f4_window在父窗口size发生改变时的同步规则
     f4_window.setParent(target_window)  # 将f4_window作为target_window的子控件
