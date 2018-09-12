@@ -5,6 +5,7 @@ import time
 import datetime
 import subprocess
 import platform
+import signal
 from PyQt5 import QtCore
 from threading import Event, Thread
 import webview.constant as constant
@@ -91,7 +92,6 @@ class LoadHandler(object):
                 start_load_timestamp=self.main_frame_load_end_time))
             browser.ExecuteJavascript('window.__cef__.CEF_INFO.loadTimeCost = {time_cost}'.format(
                 time_cost=load_time_cost))
-            print('load cost = ', load_time_cost)
 
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
         if frame.IsMain():
@@ -123,6 +123,7 @@ class BrowserView(QMainWindow):
         screen_width = screen.width()
         screen_height = screen.height()
         self.attached_child_list = []  # 存储该窗口的跟随子窗口列表
+        self.third_party_pid_list = []  # 存储当前窗口所内嵌第三方应用的子进程Id
         self.responsive_params = {
             'top': 0,
             'right': 0,
@@ -212,18 +213,26 @@ class BrowserView(QMainWindow):
             if hasattr(self, 'view'):
                 self.view.ExecuteFunction('window.python_cef.dispatchCustomEvent', 'windowCloseEvent')
             else:
+                self.kill_subprocess()
                 event.accept()
         else:
             if self.uid == 'master':
+                self.kill_subprocess()
                 quit_application()
             else:
-                event.accept()
+                self.kill_subprocess()
                 self.update_browser_info_one_by_one(increase=False)
+                event.accept()
 
     def resizeEvent(self, event):
         cef.WindowUtils.OnSize(self.winId(), 0, 0, 0)
         size = event.size()
         self.resize_trigger.emit(size.width(), size.height())
+
+    def kill_subprocess(self):
+        if platform.system() == 'Windows':
+            for sub_pid in self.third_party_pid_list:
+                os.popen('taskkill /pid {pid} -f'.format(pid=sub_pid))
 
     def show_window(self, cid=''):
         uid = self.get_uid_by_cid(cid)
@@ -264,6 +273,7 @@ class BrowserView(QMainWindow):
         """
         # for qt_main_window in BrowserView.instances.values():
         #     qt_main_window.close()
+        self.kill_subprocess()
         quit_application()
 
     def open(self, param=None):
@@ -419,7 +429,8 @@ class BrowserView(QMainWindow):
     def nest_third_party_application(self, param={}):
         if param is None:
             param = {}
-        param.setdefault('cid', 'master')  # 内嵌应用目标窗口的cid
+        param.setdefault('newCid', '')  # 本窗口的cid
+        param.setdefault('targetCid', 'master')  # 内嵌应用目标窗口的cid
         param.setdefault('top', 0)  # 内嵌窗口距离目标窗口顶部的自适应距离
         param.setdefault('right', 0)  # 内嵌窗口距离目标窗口右侧的自适应距离
         param.setdefault('bottom', 0)  # 内嵌窗口距离目标窗口底部的自适应距离
@@ -427,7 +438,8 @@ class BrowserView(QMainWindow):
         param.setdefault('application_path', '')
         param.setdefault('username', '')
         param.setdefault('password', '')
-        nest_third_party_application(uid=self.get_uid_by_cid(param['cid']),
+        nest_third_party_application(target_uid=self.get_uid_by_cid(param['targetCid']),
+                                     cid=param['newCid'],
                                      third_party_window_geometry={
                                          'top': param['top'],
                                          'right': param['right'],
@@ -525,32 +537,35 @@ def get_handle_id(third_party_application_title):
         return hwnd
 
 
-def launch_f4_client(application_title, application_path, username, password):
+def launch_f4_client(application_title, application_path, username, password, qt_window):
     exe_path = application_path + \
                "-n:" + username + ' ' + \
                "-p:" + password + ' ' + \
                "-b:true " + "-m:false " + \
                "-pid:" + str(os.getpid()) + ' ' + \
                '-t:' + application_title
-    subprocess.Popen(exe_path)
+    child_process = subprocess.Popen(exe_path)
+    qt_window.third_party_pid_list.append(child_process.pid)
 
 
-def nest_third_party_application(uid='master',
+def nest_third_party_application(target_uid='master',
+                                 cid='',
                                  third_party_window_geometry={'top': 0, 'right': 0, 'bottom': 0, 'left': 0},
                                  application_path='',
                                  username='', password=''):
     third_party_application_title = generate_guid('third_party_application_title')
-    third_party_wrapper_window = create_qt_view(default_show=False, window_type='qt')
+    third_party_wrapper_window = create_qt_view(default_show=False, window_type='qt', cid=cid)
     global pixel_ratio
     if platform.system() == 'Windows':
         pixel_ratio = dpi_dict[str(third_party_wrapper_window.logicalDpiX())]
     geometry = third_party_window_geometry
-    target_window = BrowserView.instances[uid]
+    target_window = BrowserView.instances[target_uid]
     offset_top = pixel_ratio * geometry['top']
     offset_right = pixel_ratio * geometry['right']
     offset_bottom = pixel_ratio * geometry['bottom']
     offset_left = pixel_ratio * geometry['left']
-    t = Thread(target=launch_f4_client, args=(third_party_application_title, application_path, username, password))
+    t = Thread(target=launch_f4_client,
+               args=(third_party_application_title, application_path, username, password, target_window))
     t.start()
     # t.join()
 
@@ -720,8 +735,6 @@ def quit_application():
 
 
 def exit_python():
-    import platform
-    import signal
     if platform.system() == 'Windows':
         pid = os.getpid()
         os.kill(pid, signal.CTRL_BREAK_EVENT)
