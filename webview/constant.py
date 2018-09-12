@@ -20,6 +20,7 @@ burgeon_cef_sdk_js = """
     if (window.CEF_HAS_INITIALIZED) {
         return
     }
+    const encryptionKey = 'BURGEON-FRONT-END';
     const moduleName = 'windowInstance';
     const sdkModuleName = '__cef__';
     const pythonCallBack = 'python_cef';
@@ -226,6 +227,14 @@ burgeon_cef_sdk_js = """
         if (window[moduleName] && typeof window[moduleName]['update_window_geometry'] === 'function') {
             window[moduleName]['update_window_geometry'](cid);
         }
+    };
+    cef.encryption = (code) => {
+        return btoa(`${btoa(encryptionKey)}${btoa(code)}`)
+    };
+    cef.decryption = (code) => {
+      const t_1 = atob(code);
+      const t_2 = t_1.replace(btoa(encryptionKey), '');
+      return atob(t_2);
     };
     cef.CEF_INFO = {};
     window[sdkModuleName] = cef;
