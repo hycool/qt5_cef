@@ -55,7 +55,7 @@
 <div>
     <input />
     <br/>
-    <button onclick="window.windowInstance.nest_f4_report()">
+    <button onclick="nest_f4()">
         <span>启动F4报表：</span>
         window.windowInstance.nest_f4_report()
     </button>
@@ -102,6 +102,19 @@
     <br/>
 </div>
 <script>
+    function nest_f4() {
+        __cef__.nestApplication({
+            cid: 'master',
+            top: 50,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            application_path: 'D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe debug ',
+            username: '3203401',
+            password: '1234'
+        })
+    }
+
     function broadCast() {
         __cef__.broadCast({a: 'a', b: 1, c: [], d: {d1: 'd1'}})
     }

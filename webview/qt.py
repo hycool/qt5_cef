@@ -298,13 +298,17 @@ class BrowserView(QMainWindow):
         self.is_full_screen = not self.is_full_screen
 
     def trigger_window_resize(self, width, height):
-        if hasattr(self, 'f4_window'):
-            self.f4_window.move(0, self.f4_window_geometry['top'])
-            self.f4_window.resize(width, height - self.f4_window_geometry['top'])
+        global pixel_ratio
+        if hasattr(self, 'third_party_wrapper_window'):
+            if platform.system() == 'Windows':
+                pixel_ratio = dpi_dict[str(self.logicalDpiX())]
+            param = self.third_party_window_geometry
+            width = width - param['left'] * pixel_ratio - param['right'] * pixel_ratio
+            height = height - param['top'] * pixel_ratio - param['bottom'] * pixel_ratio
+            self.third_party_wrapper_window.resize(width, height)
 
         # 处理该窗口的所有跟随子窗口的resize行为
         for child_window in self.attached_child_list:
-            global pixel_ratio
             if platform.system() == 'Windows':
                 pixel_ratio = dpi_dict[str(child_window.logicalDpiX())]
             param = child_window.responsive_params
@@ -412,11 +416,27 @@ class BrowserView(QMainWindow):
                 BrowserView.instances[uid].view.ExecuteFunction('window.python_cef.dispatchCustomEvent', event_name,
                                                                 event_data)
 
-    def new_f4_window(self):
-        create_qt_view(window_type='qt')
-
-    def nest_f4_report(self):
-        nest_f4_report()
+    def nest_third_party_application(self, param={}):
+        if param is None:
+            param = {}
+        param.setdefault('cid', 'master')  # 内嵌应用目标窗口的cid
+        param.setdefault('top', 0)  # 内嵌窗口距离目标窗口顶部的自适应距离
+        param.setdefault('right', 0)  # 内嵌窗口距离目标窗口右侧的自适应距离
+        param.setdefault('bottom', 0)  # 内嵌窗口距离目标窗口底部的自适应距离
+        param.setdefault('left', 0)  # 内嵌窗口距离目标窗口左侧的自适应距离
+        param.setdefault('application_path', '')
+        param.setdefault('username', '')
+        param.setdefault('password', '')
+        nest_third_party_application(uid=self.get_uid_by_cid(param['cid']),
+                                     third_party_window_geometry={
+                                         'top': param['top'],
+                                         'right': param['right'],
+                                         'bottom': param['bottom'],
+                                         'left': param['left'],
+                                     },
+                                     application_path=param['application_path'],
+                                     username=param['username'],
+                                     password=param['password'])
 
     def nest_frame_window(self, param={}):
         if param is None:
@@ -465,11 +485,10 @@ class BrowserView(QMainWindow):
                 windowLogicalHeight=self.height()))
 
 
-class Report(QWidget):
+class ThirdPartyWindow(QWidget):
     def __init__(self, child_window):
-        super(Report, self).__init__()
-        self.report_window = child_window
-        embed = self.createWindowContainer(self.report_window, self)
+        super(ThirdPartyWindow, self).__init__()
+        embed = self.createWindowContainer(child_window, self)
         window_layout = QHBoxLayout()
         window_layout.setContentsMargins(0, 0, 0, 0)
         window_layout.addWidget(embed)
@@ -484,69 +503,74 @@ def get_system_language():
         return 'en_US'
 
 
-def get_handle_id():
-    third_party_application_title = 'NESTED_F4_REPORT_WINDOW'
-    # third_party_application_window_class = 'WindowsForms10.Window.8.app.0.329445b_r9_ad1'
+def get_handle_id(third_party_application_title):
     if platform.system() == 'Windows':
         import win32gui
-        # hwnd = win32gui.FindWindow(None, report_window_title)
-        # if hwnd == 0:
-        #     start = time.time()
-        #     while hwnd == 0:
-        #         time.sleep(0.5)
-        #         hwnd = win32gui.FindWindow(report_window_class, report_window_title)
-        #         end = time.time()
-        #         if hwnd != 0 or end - start > 10:
-        #             return hwnd
-        # else:
-        #     return hwnd
-
         hwnd = 0
 
         def call_back(item_hwnd, window_title):
-            if win32gui.IsWindow(item_hwnd) and win32gui.IsWindowEnabled(item_hwnd) and win32gui.IsWindowVisible(
-                    item_hwnd) and win32gui.GetWindowText(item_hwnd) == window_title:
+            if win32gui.GetWindowText(item_hwnd) == window_title:
                 nonlocal hwnd
                 hwnd = item_hwnd
 
-        win32gui.EnumWindows(call_back, third_party_application_title)
+        if hwnd == 0:
+            start = time.time()
+            while hwnd == 0:
+                time.sleep(0.1)
+                win32gui.EnumWindows(call_back, third_party_application_title)
+                end = time.time()
+                if hwnd != 0 or end - start > 10:
+                    return hwnd
+
         return hwnd
 
 
-def launch_f4_client():
-    exe_path = \
-        "D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe debug " \
-        "-n:3203401 " \
-        "-p:1234 " \
-        "-b:true " \
-        "-m:false " \
-        "-pid:" + str(os.getpid()) + \
-        ' -t:NESTED_F4_REPORT_WINDOW'
+def launch_f4_client(application_title, application_path, username, password):
+    exe_path = application_path + \
+               "-n:" + username + ' ' + \
+               "-p:" + password + ' ' + \
+               "-b:true " + "-m:false " + \
+               "-pid:" + str(os.getpid()) + ' ' + \
+               '-t:' + application_title
     subprocess.Popen(exe_path)
 
 
-def nest_f4_report(uid='master', f4_window_geometry={'top': 50}):
-    f4_window = create_qt_view(default_show=False, window_type='qt')
+def nest_third_party_application(uid='master',
+                                 third_party_window_geometry={'top': 0, 'right': 0, 'bottom': 0, 'left': 0},
+                                 application_path='',
+                                 username='', password=''):
+    third_party_application_title = generate_guid('third_party_application_title')
+    third_party_wrapper_window = create_qt_view(default_show=False, window_type='qt')
+    global pixel_ratio
+    if platform.system() == 'Windows':
+        pixel_ratio = dpi_dict[str(third_party_wrapper_window.logicalDpiX())]
+    geometry = third_party_window_geometry
     target_window = BrowserView.instances[uid]
-    offset_top = dpi_dict[str(f4_window.logicalDpiX())] * f4_window_geometry['top']
-    t = Thread(target=launch_f4_client)
+    offset_top = pixel_ratio * geometry['top']
+    offset_right = pixel_ratio * geometry['right']
+    offset_bottom = pixel_ratio * geometry['bottom']
+    offset_left = pixel_ratio * geometry['left']
+    t = Thread(target=launch_f4_client, args=(third_party_application_title, application_path, username, password))
     t.start()
     # t.join()
 
-    hwnd = get_handle_id()
-    report_window = QWindow.fromWinId(hwnd)
-    report_window.setFlags(
-        Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.FramelessWindowHint | Qt.WA_TranslucentBackground)
-    window = Report(report_window)
+    hwnd = get_handle_id(third_party_application_title)
+    if hwnd != 0:
+        temp_window = QWindow.fromWinId(hwnd)
+        temp_window.setFlags(
+            Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.FramelessWindowHint | Qt.WA_TranslucentBackground)
+        third_party_window = ThirdPartyWindow(temp_window)
 
-    f4_window.setCentralWidget(window)
-    f4_window.setWindowFlags(Qt.FramelessWindowHint)
-    target_window.f4_window = f4_window  # 设置内嵌f4_window引用
-    target_window.f4_window_geometry = f4_window_geometry  # 设置内f4_window在父窗口size发生改变时的同步规则
-    f4_window.setParent(target_window)  # 将f4_window作为target_window的子控件
-    f4_window.show()  # 将f4_window显示出来
-    f4_window.move(0, offset_top)  # 移动f4_window 窗口位置（相对于target_window）
-    f4_window.resize(target_window.width(), target_window.height() - offset_top)  # 根据f4_window的应用场景同步其应具备的宽和高
+        third_party_wrapper_window.setCentralWidget(third_party_window)
+        third_party_wrapper_window.setWindowFlags(Qt.FramelessWindowHint)
+        target_window.third_party_wrapper_window = third_party_wrapper_window  # 设置内嵌【第三方内嵌应用】引用
+        target_window.third_party_window_geometry = third_party_window_geometry  # 设置内【第三方内嵌应用】在父窗口size发生改变时的同步规则
+        third_party_wrapper_window.setParent(target_window)  # 将【第三方内嵌应用】作为target_window的子控件
+        third_party_wrapper_window.show()  # 将【第三方内嵌应用】显示出来
+        third_party_wrapper_window.move(offset_left, offset_top)  # 移动【第三方内嵌应用】 窗口位置（相对于target_window）
+        # 根据【第三方内嵌应用】的应用场景同步其应具备的宽和高
+        third_party_wrapper_window.resize(target_window.width() - offset_left - offset_right,
+                                          target_window.height() - offset_top - offset_bottom)
 
 
 def html_to_data_uri(html):
@@ -556,8 +580,8 @@ def html_to_data_uri(html):
     return ret
 
 
-def generate_guid():
-    return 'child_' + uuid4().hex[:8]
+def generate_guid(prefix='child'):
+    return prefix + '_' + uuid4().hex[:8]
 
 
 def open_new_window(url, title=default_window_title, payload=None, maximized=False, minimized=False, cid='',

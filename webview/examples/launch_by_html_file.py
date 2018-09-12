@@ -16,5 +16,5 @@ if __name__ == '__main__':
         icon_path=icon_path,
         # call_back=call_back,
         height=800,
-        width=800
+        width=1200
     )

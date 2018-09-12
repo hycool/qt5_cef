@@ -195,6 +195,15 @@
             window[moduleName]['nest_frame_window'](params);
         }
     };
+    cef.nestApplication = (params) => {
+        if (!params || (params && Object.prototype.toString.call(params) !== '[object Object]')) {
+            console.error('__cef__.nestApplication(params): params必须为Json Object');
+            return;
+        }
+        if (window[moduleName] && typeof window[moduleName]['nest_third_party_application'] === 'function') {
+            window[moduleName]['nest_third_party_application'](params);
+        }
+    };
     cef.refreshWindowGeometry = (cid) => {
         if (window[moduleName] && typeof window[moduleName]['update_window_geometry'] === 'function') {
             window[moduleName]['update_window_geometry'](cid);
