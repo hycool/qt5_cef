@@ -370,11 +370,13 @@ class BrowserView(QMainWindow):
                     BrowserView.instances[uid].activateWindow()
                     BrowserView.instances[uid].view.SetFocus(True)
                     BrowserView.instances[uid].view.SetFocus(True)
+                    BrowserView.instances[uid].showMaximized()
                     break
         else:
             self.activateWindow()
             self.setFocus(True)
             self.view.SetFocus(True)
+            self.showMaximized()
 
     def arouse_window(self, cid=None):
         if cid is not None and isinstance(cid, str):
