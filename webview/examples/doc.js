@@ -211,3 +211,30 @@ __cef__.showCloseDialog({
     'leftButtonAction': 'close',       // 左边按钮点击后的回调行为['close', 'cancel']中的一种，close表示将退出应用，cancel表示表示取消本次操作
     'rightButtonAction': 'cancel',     // 右边按钮点击后的回调行为['close', 'cancel']中的一种，close表示将退出应用，cancel表示表示取消本次操作
 });
+
+
+/**
+ * Function Name: __cef__.nestApplication(params:JsonObject)
+ * description: 启动第三方应用程序
+ */
+__cef__.nestApplication({
+    targetCid: 'master',  // 将第三方应用嵌入到cid为targetCid所指定的目标窗口
+    newCid: 'f4_report',  // 为即将启动的第三方应用窗口容器设置一个cid，变为未来控制窗口的显示、隐藏或者其他能力
+    top: 50,              // 内嵌窗口距离父窗口顶部像素距离，默认为0逻辑像素
+    right: 0,             // 内嵌窗口距离父窗口右侧像素距离，默认为0逻辑像素
+    bottom: 0,            // 内嵌窗口距离父窗口底部像素距离，默认为0逻辑像素
+    left: 0,              // 内嵌窗口距离父窗口左侧像素距离，默认为0逻辑像素
+    application_path: 'D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe',  // 第三方应用程序在本地启动路径
+    // launchParams: 启动第三方应用所必须的参数，每个第三方应用所需求的启动参数不同，根据具体情况而定，以下的例子为快鱼项目F4报表程序启动所需要携带的参数，这些参数应由前端程序向python端请求获得
+    launchParams: {
+        LoginName: '3203401', // 第三方应用程序的用户名
+        Password: '1234',     // 第三方应用程序的登录密码
+        Host: '172.16.8.157', // 服务器主机+端口，测试服务器：pos.fferp.com:5091
+        MasterDb: '',         // master库完整路径urlencode编码
+        BaseDb: '',           // 基础库完整路径urlencode编码
+        StockDb: '',          // 库存库完整路径urlencode编码
+        PosadjDb: '',         // 调价库完整路径urlencode编码
+        FcHost: 'http://172.16.8.157:9093',  // http://{FC接口请求的主机IP或者域名:端口}
+        StoreId: ''           // 店铺ID
+    }
+});
