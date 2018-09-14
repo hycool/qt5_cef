@@ -53,11 +53,17 @@
     键盘事件响应：<span id="keydown_text"></span><br/>
 </h1>
 <div>
+    <br/>
+    <button onclick="showCloseDialog()">
+        <span>唤起Native 对话框：</span>
+        window.__cef__.showCloseDialog()
+    </button>
+    <br/>
     <input />
     <br/>
     <button onclick="nest_f4()">
         <span>启动F4报表：</span>
-        window.windowInstance.nest_f4_report()
+        window.__cef__.nestApplication()
     </button>
     <br/>
     <button onclick="window.__cef__.nestFrame({ url: 'http://www.baidu.com', newCid: '123456' })">
@@ -102,6 +108,20 @@
     <br/>
 </div>
 <script>
+    function showCloseDialog() {
+        __cef__.showCloseDialog({
+            'topBgColor': '#2a5596',
+            'buttonBgColor': '#2a5596',
+            'buttonHoverBgColor': '#153D7A',
+            'middleFontColor': '#2a5596',
+            'title': '提示',
+            'description': '您确定要退出？',
+            'leftButtonText': '是 Yes',
+            'rightButtonText': '否 No',
+            'leftButtonAction': 'close',
+            'rightButtonAction': 'cancel',
+        })
+    }
     function nest_f4() {
         __cef__.nestApplication({
             targetCid: 'master',

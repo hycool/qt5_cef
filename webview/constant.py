@@ -228,6 +228,15 @@ burgeon_cef_sdk_js = """
             window[moduleName]['update_window_geometry'](cid);
         }
     };
+    cef.showCloseDialog = (params) => {
+        if (!params || (params && Object.prototype.toString.call(params) !== '[object Object]')) {
+            console.error('__cef__.showCloseDialog(params): params必须为Json Object');
+            return;
+        }
+        if (window[moduleName] && typeof window[moduleName]['show_close_dialog'] === 'function') {
+            window[moduleName]['show_close_dialog'](params);
+        }
+    };
     cef.encryption = (code) => {
         return btoa(`${btoa(encryptionKey)}${btoa(code)}`)
     };

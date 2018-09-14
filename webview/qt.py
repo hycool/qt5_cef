@@ -41,18 +41,37 @@ dpi_dict = {
 
 
 class Dialog(QDialog):
-    def __init__(self, params={
-        'description': 'Description Info',
-        'leftButtonText': 'Left Button',
-        'rightButtonText': 'Right Button',
-        'leftButtonAction': 'close',
-        'rightButtonAction': 'cancel',
-        'borderRadius': '50px'
-    }):
+    def __init__(self, params={}):
         super(Dialog, self).__init__()
+        default_params = {
+            'topBgColor': '#2a5596',
+            'topFontSize': 24,
+            'buttonBgColor': '#2a5596',
+            'buttonHoverBgColor': '#153D7A',
+            'middleFontColor': '#2a5596',
+            'middleFontSize': 16,
+            'title': 'Dialog Title',
+            'description': 'Description Info',
+            'dialogWidth': 360,
+            'dialogHeight': 201,
+            'leftButtonText': 'Left Button',
+            'rightButtonText': 'Right Button',
+            'leftButtonAction': 'close',
+            'rightButtonAction': 'cancel',
+            'buttonWidth': 110,
+            'buttonHeight': 34,
+            'buttonFontSize': 16,
+            'borderRadius': 6,
+            'blurRadius': 20
+        }
+        default_params.update(params)
+        global pixel_ratio
+        if platform.system() == 'Windows':
+            pixel_ratio = dpi_dict[str(self.logicalDpiX())]
+        self.pixel_ratio = pixel_ratio
         self.m_drag = False
         self.m_DragPosition = 0
-        self.params = params
+        self.params = default_params
         self.init()
         self.init_style()
         # self.show()
@@ -65,10 +84,21 @@ class Dialog(QDialog):
             'close': self.self_close,
             'cancel': self.close
         }
-        self.resize(600, 200)
+        width = self.params['dialogWidth'] * self.pixel_ratio + self.params['blurRadius'] * 2 * self.pixel_ratio
+        height = self.params['dialogHeight'] * self.pixel_ratio + self.params['blurRadius'] * 2 * self.pixel_ratio
+        self.resize(width, height)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowModality(Qt.ApplicationModal)
+        shadow_effect = QGraphicsDropShadowEffect(self)
+        shadow_effect.setColor(Qt.gray)
+        shadow_effect.setBlurRadius(self.params['blurRadius'])
+        shadow_effect.setOffset(0, 0)
+        self.setGraphicsEffect(shadow_effect)
+        self.setContentsMargins(self.params['blurRadius'] * self.pixel_ratio,
+                                self.params['blurRadius'] * self.pixel_ratio,
+                                self.params['blurRadius'] * self.pixel_ratio,
+                                self.params['blurRadius'] * self.pixel_ratio)
 
         v_layout = QVBoxLayout()
 
@@ -76,12 +106,23 @@ class Dialog(QDialog):
         h_layout_top.setContentsMargins(0, 0, 0, 0)
         h_layout_top.setSpacing(0)
 
+        h_layout_middle = QHBoxLayout()
+        h_layout_middle.setContentsMargins(0, 0, 0, 0)
+        h_layout_middle.setSpacing(0)
+
         h_layout_bottom = QHBoxLayout()
+
+        dialog_title = QLabel()
+        dialog_title.setText(self.params['title'])
+        dialog_title.setAlignment(Qt.AlignCenter)
+        dialog_title.setObjectName('dialog_title')
+        h_layout_top.addWidget(dialog_title)
 
         dialog_description = QLabel()
         dialog_description.setText(self.params['description'])
         dialog_description.setAlignment(Qt.AlignCenter)
-        h_layout_top.addWidget(dialog_description)
+        dialog_description.setObjectName('dialog_description')
+        h_layout_middle.addWidget(dialog_description)
 
         left_button = QPushButton(self.params['leftButtonText'])
         left_button.clicked.connect(action[self.params['leftButtonAction']])
@@ -97,14 +138,19 @@ class Dialog(QDialog):
         top_widget = QWidget()
         top_widget.setProperty('name', 'top_widget')
 
+        middle_widget = QWidget()
+        middle_widget.setProperty('name', 'middle_widget')
+
         bottom_widget = QWidget()
         bottom_widget.setProperty('name', 'bottom_widget')
 
         top_widget.setLayout(h_layout_top)
+        middle_widget.setLayout(h_layout_middle)
         bottom_widget.setLayout(h_layout_bottom)
 
-        v_layout.addWidget(top_widget, 1)
-        v_layout.addWidget(bottom_widget, 2)
+        v_layout.addWidget(top_widget, 50)
+        v_layout.addWidget(middle_widget, 101)
+        v_layout.addWidget(bottom_widget, 50)
         v_layout.setSpacing(0)
         v_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(v_layout)
@@ -112,31 +158,57 @@ class Dialog(QDialog):
     def init_style(self):
         style = """
           QWidget [name="top_widget"] {
-            background-color: blue;
-            border-top-left-radius: 20px;
-            border-top-right-radius:20px;
+            background-color: [topBgColor];
+            border-top-left-radius: [borderRadius];
+            border-top-right-radius:[borderRadius];
+          }
+          QWidget [name="middle_widget"] {
+            background-color: [middleBgColor];
           }
           QWidget [name="bottom_widget"] {
-            background-color: black;
-            border-bottom-left-radius:20px;
-            border-bottom-right-radius:20px;
+            border-top: 1px solid #dcdcdc;
+            background-color: [bottomBgColor];
+            border-bottom-left-radius:[borderRadius];
+            border-bottom-right-radius:[borderRadius];
           }
           QPushButton {
-            background-color: red;
-             color: #fff;
-             font-family: Microsoft YaHei;
-             text-align: center;
-             border-radius: 5px;
-             width: 120px;
-             height: 50px;
+            background-color: [buttonBgColor];
+            color: #fff;
+            font-family: Microsoft YaHei;
+            text-align: center;
+            border-radius: 5px;
+            width: [buttonWidth];
+            height: [buttonHeight];
+            font-size: [buttonFontSize];
+          }
+          QPushButton:hover {
+            background-color: [buttonHoverBgColor];
           }
           QLabel {
-             color: #fff;
-             font-family: Microsoft YaHei;
-             text-align: center;
-             font-size: 25px;
-           }
+            font-family: Microsoft YaHei;
+            text-align: center;
+          }
+          #dialog_title {
+            color: #fff;
+            font-size: [topFontSize];
+          }
+          #dialog_description{
+            color: [middleFontColor];
+            font-size: [middleFontSize];
+          }
         """
+        style = style.replace('[borderRadius]', str(self.params['borderRadius'] * self.pixel_ratio) + 'px')
+        style = style.replace('[topBgColor]', self.params['topBgColor'])
+        style = style.replace('[middleBgColor]', '#fff')
+        style = style.replace('[bottomBgColor]', '#fff')
+        style = style.replace('[buttonWidth]', str(self.params['buttonWidth'] * self.pixel_ratio) + 'px')
+        style = style.replace('[buttonHeight]', str(self.params['buttonHeight'] * self.pixel_ratio) + 'px')
+        style = style.replace('[buttonBgColor]', self.params['buttonBgColor'])
+        style = style.replace('[middleFontColor]', self.params['middleFontColor'])
+        style = style.replace('[middleFontSize]', str(int(self.params['middleFontSize'] * self.pixel_ratio)) + 'px')
+        style = style.replace('[topFontSize]', str(int(self.params['topFontSize'] * self.pixel_ratio)) + 'px')
+        style = style.replace('[buttonFontSize]', str(int(self.params['buttonFontSize'] * self.pixel_ratio)) + 'px')
+        style = style.replace('[buttonHoverBgColor]', self.params['buttonHoverBgColor'])
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
@@ -612,6 +684,11 @@ class BrowserView(QMainWindow):
         BrowserView.instances[uid].view.ExecuteJavascript(
             'window.__cef__.CEF_INFO.windowLogicalHeight = {windowLogicalHeight}'.format(
                 windowLogicalHeight=self.height()))
+
+    def show_close_dialog(self, params={}):
+        if params is None:
+            params = {}
+        Dialog(params)
 
 
 class ThirdPartyWindow(QWidget):
