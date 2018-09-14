@@ -36,7 +36,9 @@ __cef__.CEF_INFO   Object  CEF_INFO对象中记录了一些系统信息，供开
  * Function Name: __cef__.addEventListener(eventName:String, eventHook:Function)
  * description: 将eventHook注册到eventName上（当eventName对应的系统事件触发时候，会调用eventHook）
  */
-const eventHook = () => { console.log('event hook test') };
+const eventHook = () => {
+    console.log('event hook test')
+};
 __cef__.addEventListener('windowCloseEvent', eventHook);
 
 
@@ -177,3 +179,35 @@ __cef__.nestFrame({
  */
 __cef__.refreshWindowGeometry(); // 无参调用，刷新当前窗口信息
 __cef__.refreshWindowGeometry('cid'); // 携参调用，刷新指定cid所标识的窗口信息
+
+
+/**
+ * Function Name: __cef__.encryption(character:String)
+ * description: 字符串base64加密
+ */
+const encryptionCode = __cef__.encryption('codeToBeEncryption');
+
+
+/**
+ * Function Name: __cef__.decryption(character:String)
+ * description: 解密由__cef__.encryption加密过的算法
+ */
+const decryptionCode = __cef__.decryption('codeToBeDecryption');
+
+
+/**
+ * Function Name: __cef__.showCloseDialog(params:JsonObject)
+ * description: 调用应用程序级别的弹窗逻辑
+ */
+__cef__.showCloseDialog({
+    'topBgColor': '#2a5596',           // 顶部信息栏背景色
+    'buttonBgColor': '#2a5596',        // 按钮背景色
+    'buttonHoverBgColor': '#153D7A',   // 鼠标悬浮在按钮上的背景色
+    'middleFontColor': '#2a5596',      // 中间提示信息文字颜色
+    'title': '提示',                   // 顶部标题栏文案
+    'description': '您确定要退出？',    // 中间提示信息文案
+    'leftButtonText': '是 Yes',        // 左边按钮文案
+    'rightButtonText': '否 No',        // 右边按钮文案
+    'leftButtonAction': 'close',       // 左边按钮点击后的回调行为['close', 'cancel']中的一种，close表示将退出应用，cancel表示表示取消本次操作
+    'rightButtonAction': 'cancel',     // 右边按钮点击后的回调行为['close', 'cancel']中的一种，close表示将退出应用，cancel表示表示取消本次操作
+});
