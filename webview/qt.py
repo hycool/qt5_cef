@@ -90,15 +90,16 @@ class Dialog(QDialog):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowModality(Qt.ApplicationModal)
-        shadow_effect = QGraphicsDropShadowEffect(self)
-        shadow_effect.setColor(Qt.gray)
-        shadow_effect.setBlurRadius(self.params['blurRadius'])
-        shadow_effect.setOffset(0, 0)
-        self.setGraphicsEffect(shadow_effect)
-        self.setContentsMargins(self.params['blurRadius'] * self.pixel_ratio,
-                                self.params['blurRadius'] * self.pixel_ratio,
-                                self.params['blurRadius'] * self.pixel_ratio,
-                                self.params['blurRadius'] * self.pixel_ratio)
+        if platform.system() == 'Windows':
+            shadow_effect = QGraphicsDropShadowEffect(self)
+            shadow_effect.setColor(Qt.gray)
+            shadow_effect.setBlurRadius(self.params['blurRadius'])
+            shadow_effect.setOffset(0, 0)
+            self.setGraphicsEffect(shadow_effect)
+            self.setContentsMargins(self.params['blurRadius'] * self.pixel_ratio,
+                                    self.params['blurRadius'] * self.pixel_ratio,
+                                    self.params['blurRadius'] * self.pixel_ratio,
+                                    self.params['blurRadius'] * self.pixel_ratio)
 
         v_layout = QVBoxLayout()
 
@@ -628,6 +629,12 @@ class BrowserView(QMainWindow):
         param.setdefault('application_path', '')
         param.setdefault('LoginName', '')
         param.setdefault('Password', '')
+        param.setdefault('MasterDb', '')
+        param.setdefault('BaseDb', '')
+        param.setdefault('StockDb', '')
+        param.setdefault('PosadjDb', '')
+        param.setdefault('FcHost', '')
+        param.setdefault('StoreId', '')
         nest_third_party_application(target_uid=self.get_uid_by_cid(param['targetCid']),
                                      cid=param['newCid'],
                                      third_party_window_geometry={
@@ -639,6 +646,12 @@ class BrowserView(QMainWindow):
                                      application_path=param['application_path'],
                                      LoginName=param['LoginName'],
                                      Password=param['Password'],
+                                     MasterDb=param['MasterDb'],
+                                     BaseDb=param['BaseDb'],
+                                     StockDb=param['StockDb'],
+                                     PosadjDb=param['PosadjDb'],
+                                     FcHost=param['FcHost'],
+                                     StoreId=param['StoreId']
                                      )
 
     def nest_frame_window(self, param={}):
