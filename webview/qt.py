@@ -81,7 +81,7 @@ class Dialog(QDialog):
 
     def init(self):
         action = {
-            'close': self.self_close,
+            'close': self.quit_app,
             'cancel': self.close
         }
         width = self.params['dialogWidth'] * self.pixel_ratio + self.params['blurRadius'] * 2 * self.pixel_ratio
@@ -225,8 +225,9 @@ class Dialog(QDialog):
     def mouseReleaseEvent(self, event):
         self.m_drag = False
 
-    def self_close(self):
+    def quit_app(self):
         self.close()
+        quit_application()
 
 
 class CefApplication(QApplication):
@@ -625,8 +626,8 @@ class BrowserView(QMainWindow):
         param.setdefault('bottom', 0)  # 内嵌窗口距离目标窗口底部的自适应距离
         param.setdefault('left', 0)  # 内嵌窗口距离目标窗口左侧的自适应距离
         param.setdefault('application_path', '')
-        param.setdefault('username', '')
-        param.setdefault('password', '')
+        param.setdefault('LoginName', '')
+        param.setdefault('Password', '')
         nest_third_party_application(target_uid=self.get_uid_by_cid(param['targetCid']),
                                      cid=param['newCid'],
                                      third_party_window_geometry={
@@ -636,8 +637,9 @@ class BrowserView(QMainWindow):
                                          'left': param['left'],
                                      },
                                      application_path=param['application_path'],
-                                     username=param['username'],
-                                     password=param['password'])
+                                     LoginName=param['LoginName'],
+                                     Password=param['Password'],
+                                     )
 
     def nest_frame_window(self, param={}):
         if param is None:
@@ -731,13 +733,31 @@ def get_handle_id(third_party_application_title):
         return hwnd
 
 
-def launch_f4_client(application_title, application_path, username, password, qt_window):
+def launch_f4_client(application_title,
+                     application_path,
+                     LoginName,
+                     Password,
+                     Host,
+                     MasterDb,
+                     BaseDb,
+                     StockDb,
+                     PosadjDb,
+                     FcHost,
+                     StoreId,
+                     qt_window):
     exe_path = application_path + \
-               "-n:" + username + ' ' + \
-               "-p:" + password + ' ' + \
+               "-n:" + LoginName + ' ' + \
+               "-p:" + Password + ' ' + \
                "-b:true " + "-m:false " + \
                "-pid:" + str(os.getpid()) + ' ' + \
-               '-t:' + application_title
+               '-t:' + application_title + ' ' + \
+               'mh:' + Host + ' ' + \
+               'MasterDb:' + MasterDb + ' ' + \
+               'BaseDb:' + BaseDb + ' ' + \
+               'StockDb:' + StockDb + ' ' + \
+               'PosadjDb:' + PosadjDb + ' ' + \
+               'fh:' + FcHost + ' ' + \
+               'StoreId:' + StoreId
     child_process = subprocess.Popen(exe_path)
     qt_window.third_party_pid_list.append(child_process.pid)
 
@@ -746,7 +766,16 @@ def nest_third_party_application(target_uid='master',
                                  cid='',
                                  third_party_window_geometry={'top': 0, 'right': 0, 'bottom': 0, 'left': 0},
                                  application_path='',
-                                 username='', password=''):
+                                 LoginName='',
+                                 Password='',
+                                 Host='',
+                                 MasterDb='',
+                                 BaseDb='',
+                                 StockDb='',
+                                 PosadjDb='',
+                                 FcHost='',
+                                 StoreId=''
+                                 ):
     third_party_application_title = generate_guid('third_party_application_title')
     third_party_wrapper_window = create_qt_view(default_show=False, window_type='qt', cid=cid)
     global pixel_ratio
@@ -759,7 +788,19 @@ def nest_third_party_application(target_uid='master',
     offset_bottom = pixel_ratio * geometry['bottom']
     offset_left = pixel_ratio * geometry['left']
     t = Thread(target=launch_f4_client,
-               args=(third_party_application_title, application_path, username, password, target_window))
+               args=(third_party_application_title,
+                     application_path,
+                     LoginName,
+                     Password,
+                     Host,
+                     MasterDb,
+                     BaseDb,
+                     StockDb,
+                     PosadjDb,
+                     FcHost,
+                     StoreId,
+                     target_window)
+               )
     t.start()
     # t.join()
 
