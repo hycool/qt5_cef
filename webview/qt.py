@@ -626,7 +626,7 @@ class BrowserView(QMainWindow):
         param.setdefault('right', 0)  # 内嵌窗口距离目标窗口右侧的自适应距离
         param.setdefault('bottom', 0)  # 内嵌窗口距离目标窗口底部的自适应距离
         param.setdefault('left', 0)  # 内嵌窗口距离目标窗口左侧的自适应距离
-        param.setdefault('application_path', '')
+        param.setdefault('applicationPath', '')
         param.setdefault('launchParams', {})
         nest_third_party_application(target_uid=self.get_uid_by_cid(param['targetCid']),
                                      cid=param['newCid'],
@@ -636,7 +636,7 @@ class BrowserView(QMainWindow):
                                          'bottom': param['bottom'],
                                          'left': param['left'],
                                      },
-                                     application_path=param['application_path'],
+                                     application_path=param['applicationPath'],
                                      launch_params=param['launchParams'],
                                      )
 

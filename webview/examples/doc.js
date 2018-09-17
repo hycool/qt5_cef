@@ -224,7 +224,7 @@ __cef__.nestApplication({
     right: 0,             // 内嵌窗口距离父窗口右侧像素距离，默认为0逻辑像素
     bottom: 0,            // 内嵌窗口距离父窗口底部像素距离，默认为0逻辑像素
     left: 0,              // 内嵌窗口距离父窗口左侧像素距离，默认为0逻辑像素
-    application_path: 'D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe',  // 第三方应用程序在本地启动路径
+    applicationPath: 'D:\\F4-Application\\report\\FastFish.Client.Pos.Report.exe',  // 第三方应用程序在本地启动路径
     // launchParams: 启动第三方应用所必须的参数，每个第三方应用所需求的启动参数不同，根据具体情况而定，以下的例子为快鱼项目F4报表程序启动所需要携带的参数，这些参数应由前端程序向python端请求获得
     launchParams: {
         LoginName: '3203401', // 第三方应用程序的用户名
