@@ -702,6 +702,12 @@ class ThirdPartyWindow(QWidget):
         self.setLayout(window_layout)
 
 
+def get_uid_by_cid(cid):
+    for (uid, value) in BrowserView.cid_map.items():
+        if value == cid:
+            return uid
+
+
 def get_system_language():
     language_code = QLocale().language()
     if str(language_code) in language_locale.keys():
@@ -781,6 +787,30 @@ def nest_third_party_application(target_uid='master',
         # 根据【第三方内嵌应用】的应用场景同步其应具备的宽和高
         third_party_wrapper_window.resize(target_window.width() - offset_left - offset_right,
                                           target_window.height() - offset_top - offset_bottom)
+
+
+def launch_third_party_application(params={}):
+    if params is None:
+        params = {}
+    params.setdefault('targetCid', 'master')
+    params.setdefault('newCid', generate_guid())
+    params.setdefault('top', 0)
+    params.setdefault('right', 0)
+    params.setdefault('bottom', 0)
+    params.setdefault('left', 0)
+    params.setdefault('applicationPath', '')
+    params.setdefault('launchParams', {})
+    nest_third_party_application(target_uid=get_uid_by_cid(params['targetCid']),
+                                 cid=params['newCid'],
+                                 third_party_window_geometry={
+                                     'top': params['top'],
+                                     'right': params['right'],
+                                     'bottom': params['bottom'],
+                                     'left': params['left']
+                                 },
+                                 application_path=params['applicationPath'],
+                                 launch_params=params['launchParams']
+                                 )
 
 
 def html_to_data_uri(html):
