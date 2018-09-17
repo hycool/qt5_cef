@@ -298,6 +298,7 @@ class LoadHandler(object):
 class BrowserView(QMainWindow):
     instances = {}
     cid_map = {}
+    cid_hwnd_map = {}
 
     full_screen_trigger = QtCore.pyqtSignal()
     resize_trigger = QtCore.pyqtSignal(int, int)
@@ -772,6 +773,8 @@ def nest_third_party_application(target_uid='master',
 
     hwnd = get_handle_id(third_party_application_title)
     if hwnd != 0:
+        if cid != '':
+            BrowserView.cid_hwnd_map[cid] = hwnd
         temp_window = QWindow.fromWinId(hwnd)
         temp_window.setFlags(
             Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.FramelessWindowHint | Qt.WA_TranslucentBackground)
